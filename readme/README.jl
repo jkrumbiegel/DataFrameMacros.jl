@@ -13,6 +13,7 @@
 # These are the most important opinionated aspects that differ from other packages:
 # - `@transform`, `@select` and `@subset` work row-wise by default, `@combine` works column-wise by default. This matches the most common modes these functions are used in and reduces friction.
 # - `@groupby` and `@sort` allow using arbitrary expressions including multiple columns, without having to `@transform` first and repeat the new column names.
+# - Column expressions are interpolated into the macro with `$`.
 # - Keyword arguments to the macro-underlying functions work by separating them from column expressions with the `;` character.
 # - Target column names are written with `:` symbols to avoid visual ambiguity (`:newcol = ...`). This also allows to use `AsTable` as a target like in DataFrames.jl.
 # - A flag macro (`@c` or `@r`) can be used to switch between row/column-based mode.
