@@ -46,6 +46,8 @@ df = DataFrame(
    5 │     5  b        58.3032    173.68
 ```
 
+### @select
+
 ```julia
 @select(df, :height_m = :height_cm / 100)
 ```
@@ -61,6 +63,24 @@ df = DataFrame(
    4 │  1.75924
    5 │  1.7368
 ```
+
+```julia
+@select(df, AsTable = (w = :weight_kg, h = :height_cm))
+```
+
+```
+5×2 DataFrame
+ Row │ w        h
+     │ Float64  Float64
+─────┼──────────────────
+   1 │ 64.9048  161.561
+   2 │ 59.6226  161.111
+   3 │ 61.3691  173.272
+   4 │ 59.0289  175.924
+   5 │ 58.3032  173.68
+```
+
+### @transform
 
 ```julia
 @transform(df, :weight_g = :weight_kg / 1000)
@@ -94,6 +114,8 @@ df = DataFrame(
    5 │     5  b        58.3032    173.68   19.3282
 ```
 
+#### column flag @c
+
 ```julia
 @transform(df, :weight_z = @c (:weight_kg .- mean(:weight_kg)) / std(:weight_kg))
 ```
@@ -109,6 +131,8 @@ df = DataFrame(
    4 │     3  a        59.0289    175.924  -0.613175
    5 │     5  b        58.3032    173.68   -0.888383
 ```
+
+### @groupby & @combine
 
 ```julia
 g = @groupby(df, iseven(:id))
@@ -144,6 +168,8 @@ Group 2 (2 rows): id_iseven = true
    2 │      true          120.992
 ```
 
+### @sort
+
 ```julia
 @sort(df, -sqrt(:height_cm))
 ```
@@ -158,5 +184,24 @@ Group 2 (2 rows): id_iseven = true
    3 │     2  a        61.3691    173.272
    4 │     1  b        64.9048    161.561
    5 │     4  b        59.6226    161.111
+```
+
+### passmissing flag @m
+
+```julia
+df = DataFrame(name = ["joe", "jim", missing, "james"])
+
+@transform(df, :cap_name = @m uppercasefirst(:name))
+```
+
+```
+4×2 DataFrame
+ Row │ name     cap_name
+     │ String?  String?
+─────┼───────────────────
+   1 │ joe      Joe
+   2 │ jim      Jim
+   3 │ missing  missing
+   4 │ james    James
 ```
 

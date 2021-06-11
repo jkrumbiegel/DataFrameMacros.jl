@@ -33,17 +33,30 @@ df = DataFrame(
     height_cm = randn(5) .* 10 .+ 170)
 
 
-#-
+# ### @select
 @select(df, :height_m = :height_cm / 100)
 #-
+@select(df, AsTable = (w = :weight_kg, h = :height_cm))
+
+# ### @transform
 @transform(df, :weight_g = :weight_kg / 1000)
 #-
 @transform(df, :BMI = :weight_kg / (:height_cm / 100) ^ 2)
-#-
+# #### column flag @c
 @transform(df, :weight_z = @c (:weight_kg .- mean(:weight_kg)) / std(:weight_kg))
-#-
+
+
+# ### @groupby & @combine
 g = @groupby(df, iseven(:id))
 #-
 @combine(g, :total_weight_kg = sum(:weight_kg))
-#-
+
+# ### @sort
+
 @sort(df, -sqrt(:height_cm))
+
+# ### passmissing flag @m
+
+df = DataFrame(name = ["joe", "jim", missing, "james"])
+
+@transform(df, :cap_name = @m uppercasefirst(:name))
