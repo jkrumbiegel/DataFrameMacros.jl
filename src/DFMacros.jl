@@ -1,9 +1,9 @@
 module DFMacros
 
 using Base: ident_cmp
-using DataFrames: transform, select, combine, subset, ByRow, passmissing
+using DataFrames: transform, select, combine, subset, ByRow, passmissing, groupby
 
-export @transform, @select, @combine, @subset
+export @transform, @select, @combine, @subset, @groupby
 
 struct Transform end
 struct Select end
@@ -26,12 +26,17 @@ macro subset(df, exprs...)
     macrohelper(Subset(), df, exprs...)
 end
 
-# macro groupby(df, exprs...)
-#     transform_part = macrohelper(Transform(), df, exprs...)
-#     quote
-#         temp = 
-#     end
-# end
+macro groupby(df, exprs...)
+    select_part = macrohelper(Select(), df, exprs...)
+    quote
+        temp = $select_part
+        df_copy = copy($(esc(df)))
+        for name in names(temp)
+            df_copy[!, name] = temp[!, name]
+        end
+        groupby(df_copy, names(temp))
+    end
+end
 
 dataframesfunc(::Transform) = transform
 dataframesfunc(::Select) = select

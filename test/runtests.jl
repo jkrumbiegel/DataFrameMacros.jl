@@ -80,3 +80,12 @@ end
     df2 = @subset(df, abs(:a) < 2)
     @test df2 == subset(df, :a => ByRow(x -> abs(x) < 2))
 end
+
+@testset "groupby" begin
+    df = DataFrame(a = [-1, 1, -2, 2, -3, 3], b = randn(6))
+    gdf = @groupby(df, abs(:a))
+    
+    gdf2 = @groupby(df, :a = abs(:a))
+    
+    gdf3 = @groupby(df, :x = abs(:a))
+end
