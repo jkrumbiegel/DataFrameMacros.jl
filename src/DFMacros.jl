@@ -1,13 +1,14 @@
 module DFMacros
 
 using Base: ident_cmp
-using DataFrames: transform, select, combine, ByRow, passmissing
+using DataFrames: transform, select, combine, subset, ByRow, passmissing
 
-export @transform, @select, @combine
+export @transform, @select, @combine, @subset
 
 struct Transform end
 struct Select end
 struct Combine end
+struct Subset end
 
 macro transform(df, exprs...)
     macrohelper(Transform(), df, exprs...)
@@ -21,6 +22,10 @@ macro combine(df, exprs...)
     macrohelper(Combine(), df, exprs...)
 end
 
+macro subset(df, exprs...)
+    macrohelper(Subset(), df, exprs...)
+end
+
 # macro groupby(df, exprs...)
 #     transform_part = macrohelper(Transform(), df, exprs...)
 #     quote
@@ -31,10 +36,12 @@ end
 dataframesfunc(::Transform) = transform
 dataframesfunc(::Select) = select
 dataframesfunc(::Combine) = combine
+dataframesfunc(::Subset) = subset
 
 defaultbyrow(::Transform) = true
 defaultbyrow(::Select) = true
 defaultbyrow(::Combine) = false
+defaultbyrow(::Subset) = true
 
 function macrohelper(T, df, exprs...)
     source_func_sink_exprs = filter(is_source_func_sink_expr, exprs)

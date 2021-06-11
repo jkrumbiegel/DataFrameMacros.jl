@@ -75,8 +75,8 @@ end
     @test df4 == combine(df, :a => ByRow(x -> 3 * x) => :y)
 end
 
-# @testset "groupby" begin
-#     df = DataFrame(a = [-1, 1, -2, 2, -3, 3], b = randn(6))
-#     gdf = @groupby(df, :c = abs(:a))
-#     @test gdf == groupby(transform(df, :a => ByRow(abs) => :c), :c)
-# end
+@testset "subset" begin
+    df = DataFrame(a = [-1, 1, -2, 2, -3, 3], b = randn(6))
+    df2 = @subset(df, abs(:a) < 2)
+    @test df2 == subset(df, :a => ByRow(x -> abs(x) < 2))
+end
