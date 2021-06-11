@@ -3,12 +3,13 @@ module DFMacros
 using Base: ident_cmp
 using DataFrames: transform, select, combine, subset, ByRow, passmissing, groupby
 
-export @transform, @select, @combine, @subset, @groupby
+export @transform, @select, @combine, @subset, @groupby, @sort
 
 struct Transform end
 struct Select end
 struct Combine end
 struct Subset end
+struct Sort end
 
 macro transform(exprs...)
     macrohelper(Transform(), exprs...)
@@ -38,6 +39,20 @@ macro groupby(exprs...)
             df_copy[!, name] = temp[!, name]
         end
         groupby(df_copy, names(temp); $(kw_exprs...))
+    end
+end
+
+macro sort(exprs...)
+    f, df, func, kw_exprs = f_df_funcs_kwexprs(Select(), exprs...)
+
+    select_kwexprs = [Expr(:kw, :copycols, false)]
+    select_call = build_call(f, df, func, select_kwexprs)
+    quote
+        temp = $select_call
+
+        sp = sortperm(temp; $(kw_exprs...))
+        df_copy = copy($(esc(df)))
+        df_copy[sp, :]
     end
 end
 
@@ -75,7 +90,6 @@ function f_df_funcs_kwexprs(T, exprs...)
     converted = map(e -> convert_source_funk_sink_expr(T, e), source_func_sink_exprs)
     f = dataframesfunc(T)
     f, df, converted, kw_exprs
-    # :($f($(esc(df)), $(map(esc, converted)...); $(map(esc, kw_exprs)...)))
 end
 
 convert_source_funk_sink_expr(T, x) = x

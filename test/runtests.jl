@@ -89,3 +89,15 @@ end
     
     gdf3 = @groupby(df, :x = abs(:a))
 end
+
+@testset "sort" begin
+    df = DataFrame(a = rand(1:10, 100), b = rand('a':'z', 100))
+    df2 = @sort(df, :a)
+    @test df2 == sort(df, :a)
+
+    df3 = @sort(df, -:a)
+    @test df3 == sort(df, :a, rev = true)
+
+    df4 = @sort(df, -:a, :b)
+    @test df4 == sort(df, [order(:a, rev = true), :b])
+end
