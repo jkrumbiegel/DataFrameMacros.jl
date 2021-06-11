@@ -10,31 +10,34 @@ struct Select end
 struct Combine end
 struct Subset end
 
-macro transform(df, exprs...)
-    macrohelper(Transform(), df, exprs...)
+macro transform(exprs...)
+    macrohelper(Transform(), exprs...)
 end
 
-macro select(df, exprs...)
-    macrohelper(Select(), df, exprs...)
+macro select(exprs...)
+    macrohelper(Select(), exprs...)
 end
 
-macro combine(df, exprs...)
-    macrohelper(Combine(), df, exprs...)
+macro combine(exprs...)
+    macrohelper(Combine(), exprs...)
 end
 
-macro subset(df, exprs...)
-    macrohelper(Subset(), df, exprs...)
+macro subset(exprs...)
+    macrohelper(Subset(), exprs...)
 end
 
-macro groupby(df, exprs...)
-    select_part = macrohelper(Select(), df, exprs...)
+macro groupby(exprs...)
+    f, df, func, kw_exprs = f_df_funcs_kwexprs(Select(), exprs...)
+
+    select_kwexprs = [Expr(:kw, :copycols, false)]
+    select_call = build_call(f, df, func, select_kwexprs)
     quote
-        temp = $select_part
+        temp = $select_call
         df_copy = copy($(esc(df)))
         for name in names(temp)
             df_copy[!, name] = temp[!, name]
         end
-        groupby(df_copy, names(temp))
+        groupby(df_copy, names(temp); $(kw_exprs...))
     end
 end
 
@@ -48,20 +51,34 @@ defaultbyrow(::Select) = true
 defaultbyrow(::Combine) = false
 defaultbyrow(::Subset) = true
 
-function macrohelper(T, df, exprs...)
-    source_func_sink_exprs = filter(is_source_func_sink_expr, exprs)
-    kw_exprs = filter(is_kw_expr, exprs)
-    converted = map(e -> convert_source_funk_sink_expr(T, e), source_func_sink_exprs)
-    converted_kw = map(convert_kw_expr, kw_exprs)
-    f = dataframesfunc(T)
-    :($f($(esc(df)), $(map(esc, converted)...); $(kw_exprs...)))
+function macrohelper(T, exprs...)
+    f, df, converted, kw_exprs = f_df_funcs_kwexprs(T, exprs...)
+    build_call(f, df, converted, kw_exprs)
 end
 
-is_source_func_sink_expr(x) = true
-is_kw_expr(x) = false
+function build_call(f, df, converted, kw_exprs)
+    :($f($(esc(df)), $(map(esc, converted)...); $(map(esc, kw_exprs)...)))
+end
+
+function f_df_funcs_kwexprs(T, exprs...)
+    
+    if length(exprs) >= 1 && exprs[1] isa Expr && exprs[1].head == :parameters
+        kw_exprs = exprs[1].args
+        df = exprs[2]
+        source_func_sink_exprs = exprs[3:end]
+    else
+        df = exprs[1]
+        source_func_sink_exprs = exprs[2:end]
+        kw_exprs = []
+    end
+
+    converted = map(e -> convert_source_funk_sink_expr(T, e), source_func_sink_exprs)
+    f = dataframesfunc(T)
+    f, df, converted, kw_exprs
+    # :($f($(esc(df)), $(map(esc, converted)...); $(map(esc, kw_exprs)...)))
+end
 
 convert_source_funk_sink_expr(T, x) = x
-convert_kw_expr(x) = x
 
 function convert_source_funk_sink_expr(T, e::Expr)
     target, formula = split_formula(e)
