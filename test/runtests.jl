@@ -100,6 +100,9 @@ end
 
     df4 = @sort(df, -:a, :b)
     @test df4 == sort(df, [order(:a, rev = true), :b])
+
+    df5 = @sort(df, :a; rev = true)
+    @test df5 == sort(df, :a, rev = true)
 end
 
 @testset "escaping symbols" begin

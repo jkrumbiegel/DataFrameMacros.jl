@@ -54,7 +54,7 @@ g = @groupby(df, iseven(:id))
 
 # ### @sort
 
-@sort(df, -sqrt(:height_cm))
+@sort(df, sqrt(:height_cm) / :weight_kg; rev = true)
 
 # ### interpolating column expressions
 

@@ -172,7 +172,7 @@ Group 2 (2 rows): id_iseven = true
 ### @sort
 
 ```julia
-@sort(df, -sqrt(:height_cm))
+@sort(df, sqrt(:height_cm) / :weight_kg; rev = true)
 ```
 
 ```
@@ -180,11 +180,11 @@ Group 2 (2 rows): id_iseven = true
  Row │ id     group  weight_kg  height_cm
      │ Int64  Char   Float64    Float64
 ─────┼────────────────────────────────────
-   1 │     3  a        59.0289    175.924
-   2 │     5  b        58.3032    173.68
+   1 │     5  b        58.3032    173.68
+   2 │     3  a        59.0289    175.924
    3 │     2  a        61.3691    173.272
-   4 │     1  b        64.9048    161.561
-   5 │     4  b        59.6226    161.111
+   4 │     4  b        59.6226    161.111
+   5 │     1  b        64.9048    161.561
 ```
 
 ### interpolating column expressions
