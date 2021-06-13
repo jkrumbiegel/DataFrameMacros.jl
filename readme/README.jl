@@ -21,6 +21,8 @@
 
 # ## Examples
 
+# TOC
+
 using DFMacros
 using DataFrames
 using Random

@@ -21,6 +21,15 @@ These are the most important opinionated aspects that differ from other packages
 
 ## Examples
 
+- [@select](#select)
+- [@transform](#transform)
+- [column flag @c](#column-flag-c)
+- [@groupby & @combine](#groupby--combine)
+- [@sort](#sort)
+- [interpolating column expressions](#interpolating-column-expressions)
+- [passmissing flag @m](#passmissing-flag-m)
+- [escaping symbols](#escaping-symbols)
+
 ```julia
 using DFMacros
 using DataFrames
