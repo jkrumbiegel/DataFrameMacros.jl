@@ -1,6 +1,6 @@
 # # DFMacros
 
-# This package offers an opinionated take on DataFrame manipulation in Julia.
+# This package offers an opinionated take on DataFrame manipulation in Julia with a syntax geared towards convenience.
 
 # The following macros are currently available:
 # - `@transform` / `@transform!`
@@ -9,6 +9,31 @@
 # - `@combine`
 # - `@subset` / `@subset!`
 # - `@sort` / `@sort!`
+
+# Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for longer piped transformations:
+
+using DFMacros
+using DataFrames
+using Chain
+using Random
+using Statistics
+Random.seed!(123)
+
+df = DataFrame(
+    id = shuffle(1:5),
+    group = rand('a':'b', 5),
+    weight_kg = randn(5) .* 5 .+ 60,
+    height_cm = randn(5) .* 10 .+ 170)
+
+@chain df begin
+    @subset(:weight_kg > 50)
+    @transform(:BMI = :weight_kg / (:height_cm / 100) ^ 2)
+    @groupby(iseven(:id), :group)
+    @combine(:mean_BMI = mean(:BMI))
+    @sort(sqrt(:mean_BMI))
+end
+
+# ## Design choices
 
 # These are the most important opinionated aspects that differ from other packages:
 # - `@transform`, `@select` and `@subset` work row-wise by default, `@combine` works column-wise by default. This matches the most common modes these functions are used in and reduces friction.
