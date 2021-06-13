@@ -1,15 +1,20 @@
 module DFMacros
 
 using Base: ident_cmp
-using DataFrames: transform, select, combine, subset, ByRow, passmissing, groupby
+using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby
 
-export @transform, @select, @combine, @subset, @groupby, @sort
+export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!
 
 struct Transform end
+struct Transform! end
 struct Select end
+struct Select! end
 struct Combine end
 struct Subset end
+struct Subset! end
 struct Sort end
+struct Sort! end
+
 
 macro transform(exprs...)
     macrohelper(Transform(), exprs...)
@@ -19,12 +24,24 @@ macro select(exprs...)
     macrohelper(Select(), exprs...)
 end
 
-macro combine(exprs...)
-    macrohelper(Combine(), exprs...)
-end
-
 macro subset(exprs...)
     macrohelper(Subset(), exprs...)
+end
+
+macro transform!(exprs...)
+    macrohelper(Transform!(), exprs...)
+end
+
+macro select!(exprs...)
+    macrohelper(Select!(), exprs...)
+end
+
+macro subset!(exprs...)
+    macrohelper(Subset!(), exprs...)
+end
+
+macro combine(exprs...)
+    macrohelper(Combine(), exprs...)
 end
 
 macro groupby(exprs...)
@@ -43,28 +60,51 @@ macro groupby(exprs...)
 end
 
 macro sort(exprs...)
+    sorthelper(exprs...; mutate = false)
+end
+
+macro sort!(exprs...)
+    sorthelper(exprs...; mutate = true)
+end
+
+function sorthelper(exprs...; mutate)
     f, df, func, kw_exprs = f_df_funcs_kwexprs(Select(), exprs...)
 
     select_kwexprs = [Expr(:kw, :copycols, false)]
     select_call = build_call(f, df, func, select_kwexprs)
-    quote
-        temp = $select_call
+    if mutate
+        quote
+            temp = $select_call
+            sp = sortperm(temp; $(kw_exprs...))
+            $(esc(df)) = $(esc(df))[sp, :]
+        end
+    else
+        quote
+            temp = $select_call
 
-        sp = sortperm(temp; $(kw_exprs...))
-        df_copy = copy($(esc(df)))
-        df_copy[sp, :]
+            sp = sortperm(temp; $(kw_exprs...))
+            
+            df_copy = copy($(esc(df)))
+            df_copy[sp, :]
+        end
     end
 end
 
 dataframesfunc(::Transform) = transform
+dataframesfunc(::Transform!) = transform!
 dataframesfunc(::Select) = select
+dataframesfunc(::Select!) = select!
 dataframesfunc(::Combine) = combine
 dataframesfunc(::Subset) = subset
+dataframesfunc(::Subset!) = subset!
 
 defaultbyrow(::Transform) = true
 defaultbyrow(::Select) = true
-defaultbyrow(::Combine) = false
 defaultbyrow(::Subset) = true
+defaultbyrow(::Transform!) = true
+defaultbyrow(::Select!) = true
+defaultbyrow(::Subset!) = true
+defaultbyrow(::Combine) = false
 
 function macrohelper(T, exprs...)
     f, df, converted, kw_exprs = f_df_funcs_kwexprs(T, exprs...)

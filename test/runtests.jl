@@ -110,3 +110,11 @@ end
     df2 = @transform(df, :color == $:red)
     @test df2[:, 2] == transform(df, :color => ByRow(==(:red)))[:, 2]
 end
+
+@testset "mutating" begin
+    df = DataFrame(a = 1:100, b = rand('a':'e', 100), c = randn(100))
+    @transform!(df, :a = :a * 2)
+    @sort!(df, :b)
+    @subset!(df, :a > 20)
+    @select!(df, :a, :c)
+end
