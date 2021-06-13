@@ -240,7 +240,7 @@ df = DataFrame(name = ["joe", "jim", missing, "james"])
 
 The `$` symbol usually signals that an expression is to be used as a column identifier.
 The only exception is `$` in front of a bare symbol.
-In that case, it signals that the symbol should not be used as a column.
+In that case, it signals that the symbol should be left as it is.
 
 ```julia
 df = DataFrame(color = [:red, :green, :blue])
