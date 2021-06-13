@@ -105,5 +105,5 @@ end
 @testset "escaping symbols" begin
     df = DataFrame(color = [:red, :green, :blue])
     df2 = @transform(df, :color == $:red)
-    @test df2 == transform(df, :color => ByRow(==(:red)))
+    @test df2[:, 2] == transform(df, :color => ByRow(==(:red)))[:, 2]
 end

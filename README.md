@@ -187,6 +187,36 @@ Group 2 (2 rows): id_iseven = true
    5 │     4  b        59.6226    161.111
 ```
 
+### interpolating column expressions
+
+If you have a variable or expression that you want to use as a column identifier, interpolate it into the macro with `$`.
+
+```julia
+the_column = :weight_kg
+@combine(df, :total_weight = sum($the_column))
+```
+
+```
+1×1 DataFrame
+ Row │ total_weight
+     │ Float64
+─────┼──────────────
+   1 │      303.229
+```
+
+```julia
+a_string = "weight"
+@combine(df, :total_weight = sum($(a_string * "_kg")))
+```
+
+```
+1×1 DataFrame
+ Row │ total_weight
+     │ Float64
+─────┼──────────────
+   1 │      303.229
+```
+
 ### passmissing flag @m
 
 ```julia
@@ -204,5 +234,26 @@ df = DataFrame(name = ["joe", "jim", missing, "james"])
    2 │ jim      Jim
    3 │ missing  missing
    4 │ james    James
+```
+
+### escaping symbols
+
+The `$` symbol usually signals that an expression is to be used as a column identifier.
+The only exception is `$` in front of a bare symbol.
+In that case, it signals that the symbol should not be used as a column.
+
+```julia
+df = DataFrame(color = [:red, :green, :blue])
+@transform(df, :is_red = :color == $:red)
+```
+
+```
+3×2 DataFrame
+ Row │ color   is_red
+     │ Symbol  Bool
+─────┼────────────────
+   1 │ red       true
+   2 │ green    false
+   3 │ blue     false
 ```
 
