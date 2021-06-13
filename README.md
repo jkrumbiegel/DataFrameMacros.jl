@@ -3,12 +3,12 @@
 This package offers an opinionated take on DataFrame manipulation in Julia.
 
 The following macros are currently available:
-- `@transform`
-- `@select`
+- `@transform` / `@transform!`
+- `@select` / `@select!`
 - `@groupby`
 - `@combine`
-- `@subset`
-- `@sort`
+- `@subset` / `@subset!`
+- `@sort` / `@sort!`
 
 These are the most important opinionated aspects that differ from other packages:
 - `@transform`, `@select` and `@subset` work row-wise by default, `@combine` works column-wise by default. This matches the most common modes these functions are used in and reduces friction.

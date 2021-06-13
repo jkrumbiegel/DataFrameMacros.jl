@@ -18,8 +18,6 @@ function make_toc(s)
 
     toc_entries = filter(!isnothing, toc_entries)
     s = map(toc_entries) do (title, n, githubanchor)
-        @show githubanchor
-
         # "# $(" "^n)- [$title](#$githubanchor)"
         "# - [$title](#$githubanchor)"
     end |> x -> join(x, "\n")
