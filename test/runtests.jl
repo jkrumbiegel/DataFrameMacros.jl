@@ -101,3 +101,9 @@ end
     df4 = @sort(df, -:a, :b)
     @test df4 == sort(df, [order(:a, rev = true), :b])
 end
+
+@testset "escaping symbols" begin
+    df = DataFrame(color = [:red, :green, :blue])
+    df2 = @transform(df, :color == $:red)
+    @test df2 == transform(df, :color => ByRow(==(:red)))
+end

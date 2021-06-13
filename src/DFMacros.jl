@@ -141,7 +141,7 @@ function gather_columns!(columns, x)
         if x ∉ columns
             push!(columns, x)
         end
-    elseif x isa Expr
+    elseif x isa Expr && !(is_escaped_symbol(x))
         foreach(x.args) do arg
             gather_columns!(columns, arg)
         end
@@ -164,7 +164,7 @@ end
 is_column_expr(q::QuoteNode) = true
 is_column_expr(x) = false
 function is_column_expr(e::Expr)
-    e.head == :$
+    e.head == :$ && !is_escaped_symbol(e)
 end
 
 function make_function_expr(formula, columns)
@@ -175,6 +175,14 @@ function make_function_expr(formula, columns)
 
     newsyms = map(x -> gensym(), columns)
     replaced_formula = postwalk(formula) do e
+        # check first if this is an escaped symbol
+        # and if yes return it unwrapped
+        if is_escaped_symbol(e)
+            return e.args[1]
+        end
+
+        # check if this expression matches one of the column expressions
+        # and replace it with a newsym if it matches
         i = findfirst(c -> c == e, columns)
         if i === nothing
             e
@@ -195,6 +203,9 @@ function clean_column(e::Expr)
         e
     end
 end
+
+is_escaped_symbol(e::Expr) = e.head == :$ && length(e.args) == 1 && e.args[1] isa QuoteNode
+is_escaped_symbol(x) = false
 
 is_simple_function_call(x, columns) = false, nothing
 function is_simple_function_call(expr::Expr, columns)
