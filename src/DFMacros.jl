@@ -138,7 +138,7 @@ function convert_source_funk_sink_expr(T, e::Expr, df)
     target, formula = split_formula(e)
     flags, formula = extract_macro_flags(formula)
     columns = gather_columns(formula)
-    func = make_function_expr(formula, columns)
+    func, columns = make_function_expr(formula, columns)
     clean_columns = map(c -> clean_column(c, df), columns)
 
     byrow = (defaultbyrow(T) && !('c' in flags)) ||
@@ -170,20 +170,20 @@ function split_formula(e::Expr)
     target, formula
 end
 
-function gather_columns(x)
+function gather_columns(x; unique = true)
     columns = []
-    gather_columns!(columns, x)
+    gather_columns!(columns, x; unique = unique)
     columns
 end
 
-function gather_columns!(columns, x)
+function gather_columns!(columns, x; unique)
     if is_column_expr(x)
-        if x ∉ columns
+        if !unique || x ∉ columns
             push!(columns, x)
         end
     elseif x isa Expr && !(is_escaped_symbol(x)) && !(is_dot_quotenode_expr(x))
         foreach(x.args) do arg
-            gather_columns!(columns, arg)
+            gather_columns!(columns, arg; unique = unique)
         end
     end
 end
@@ -219,7 +219,8 @@ end
 function make_function_expr(formula, columns)
     is_simple, symbol = is_simple_function_call(formula, columns)
     if is_simple
-        return symbol
+        # :a + :a returns only +(:a) if we don't set unique false
+        return symbol, gather_columns(formula; unique = false)
     end
 
     newsyms = map(x -> gensym(), columns)
@@ -239,9 +240,10 @@ function make_function_expr(formula, columns)
             newsyms[i]
         end
     end
-    quote
+    expr = quote
         ($(newsyms...),) -> $replaced_formula
     end
+    expr, columns
 end
 
 clean_column(x::QuoteNode, df) = x
@@ -268,10 +270,12 @@ is_escaped_symbol(x) = false
 
 is_simple_function_call(x, columns) = false, nothing
 function is_simple_function_call(expr::Expr, columns)
-    is_simple = expr.head == :call &&
-        length(expr.args) >= 2 &&
-        expr.args[1] isa Symbol &&
+    is_call = expr.head == :call
+    no_columns_in_funcpart = isempty(gather_columns(expr.args[1]))
+    only_columns_in_argpart = length(expr.args) >= 2 &&
         all(x -> x in columns, expr.args[2:end])
+
+    is_simple = is_call && no_columns_in_funcpart && only_columns_in_argpart
 
     is_simple, expr.args[1]
 end

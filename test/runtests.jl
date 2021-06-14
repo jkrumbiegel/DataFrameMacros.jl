@@ -149,3 +149,19 @@ end
         :a => ByRow(x -> Mod1.Mod2.func2(x)) => :c,
     )
 end
+
+
+@testset "simple formula" begin
+    df = DataFrame(a = 1:10)
+    df2 = @transform(df, :b = :a + :a)
+    @test df2 == transform(df, :a => ByRow(x -> x + x) => :b)
+
+    using .Mod1
+
+    # check that column names are correct for simple function calls
+    df3 = @transform(df, Mod1.func(:a), Mod1.Mod2.func2(:a))
+    @test df3 == transform(df,
+        :a => ByRow(Mod1.func),
+        :a => ByRow(Mod1.Mod2.func2),
+    )
+end
