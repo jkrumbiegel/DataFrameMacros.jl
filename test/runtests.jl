@@ -118,3 +118,35 @@ end
     @subset!(df, :a > 20)
     @select!(df, :a, :c)
 end
+
+# @testset "column specification" begin
+#     df = DataFrame([Symbol("a column") => [1, 2, 3], :b => [4, 5, 6]])
+#     df2 = @transform(df, :c = $"a column" * 2)
+#     @test df2 == transform(df, ["a column", 2] => ByRow(+) => :c)
+#     #"
+#     @test df2 == transform(df, ["a column", 2] => ByRow(+) => :c)
+# end
+
+module Mod1
+    module Mod2
+        export func2
+        func2(x) = 3x
+    end
+    using .Mod2
+    export Mod2
+
+    export func
+    func(x) = 2x
+end
+
+@testset "modules" begin
+    
+    using .Mod1
+
+    df = DataFrame(a = [1, 2, 3])
+    df2 = @transform(df, :b = Mod1.func(:a), :c = Mod1.Mod2.func2(:a))
+    @test df2 == transform(df,
+        :a => ByRow(x -> Mod1.func(x)) => :b,
+        :a => ByRow(x -> Mod1.Mod2.func2(x)) => :c,
+    )
+end

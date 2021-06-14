@@ -181,7 +181,7 @@ function gather_columns!(columns, x)
         if x ∉ columns
             push!(columns, x)
         end
-    elseif x isa Expr && !(is_escaped_symbol(x))
+    elseif x isa Expr && !(is_escaped_symbol(x)) && !(is_dot_quotenode_expr(x))
         foreach(x.args) do arg
             gather_columns!(columns, arg)
         end
@@ -199,6 +199,15 @@ function extract_macro_flags(e::Expr)
     else
         "", e
     end
+end
+
+is_dot_quotenode_expr(x) = false
+# matches Module.[Submodule.Subsubmodule...].value
+function is_dot_quotenode_expr(e::Expr)
+    e.head == :(.) &&
+        length(e.args) == 2 &&
+        (e.args[1] isa Symbol || is_dot_quotenode_expr(e.args[1])) &&
+        e.args[2] isa QuoteNode
 end
 
 is_column_expr(q::QuoteNode) = true
