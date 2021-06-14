@@ -112,7 +112,7 @@ function macrohelper(T, exprs...)
 end
 
 function build_call(f, df, converted, kw_exprs)
-    :($f($(esc(df)), $(map(esc, converted)...); $(map(esc, kw_exprs)...)))
+    :($f($(esc(df)), $(converted...); $(map(esc, kw_exprs)...)))
 end
 
 function f_df_funcs_kwexprs(T, exprs...)
@@ -127,19 +127,19 @@ function f_df_funcs_kwexprs(T, exprs...)
         kw_exprs = []
     end
 
-    converted = map(e -> convert_source_funk_sink_expr(T, e), source_func_sink_exprs)
+    converted = map(e -> convert_source_funk_sink_expr(T, e, df), source_func_sink_exprs)
     f = dataframesfunc(T)
     f, df, converted, kw_exprs
 end
 
-convert_source_funk_sink_expr(T, x) = x
+convert_source_funk_sink_expr(T, x, df) = x
 
-function convert_source_funk_sink_expr(T, e::Expr)
+function convert_source_funk_sink_expr(T, e::Expr, df)
     target, formula = split_formula(e)
     flags, formula = extract_macro_flags(formula)
     columns = gather_columns(formula)
     func = make_function_expr(formula, columns)
-    clean_columns = map(clean_column, columns)
+    clean_columns = map(c -> clean_column(c, df), columns)
 
     byrow = (defaultbyrow(T) && !('c' in flags)) ||
         (!defaultbyrow(T) && ('r' in flags))
@@ -153,9 +153,9 @@ function convert_source_funk_sink_expr(T, e::Expr)
     func = byrow ? :(ByRow($func)) : :($func)
 
     trans_expr = if target === nothing
-        :([$(clean_columns...)] => $func)
+        :([$(clean_columns...)] => $(esc(func)))
     else
-        :([$(clean_columns...)] => $func => $target)
+        :([$(clean_columns...)] => $(esc(func)) => $(esc(target)))
     end
 end
 
@@ -244,14 +244,24 @@ function make_function_expr(formula, columns)
     end
 end
 
-clean_column(x) = x
-function clean_column(e::Expr)
-    if e.head == :$
+clean_column(x::QuoteNode, df) = x
+clean_column(x, df) = :(symbolarg($x, $df))
+function clean_column(e::Expr, df)
+    e = if e.head == :$
         e.args[1]
     else
         e
     end
+    if e isa String
+        QuoteNode(Symbol(e))
+    else
+        :(symbolarg($(esc(e)), $(esc(df))))
+    end
 end
+
+symbolarg(x::Int, df) = Symbol(names(df)[x])
+symbolarg(sym::Symbol, df) = sym
+symbolarg(s::String, df) = Symbol(s)
 
 is_escaped_symbol(e::Expr) = e.head == :$ && length(e.args) == 1 && e.args[1] isa QuoteNode
 is_escaped_symbol(x) = false

@@ -119,13 +119,12 @@ end
     @select!(df, :a, :c)
 end
 
-# @testset "column specification" begin
-#     df = DataFrame([Symbol("a column") => [1, 2, 3], :b => [4, 5, 6]])
-#     df2 = @transform(df, :c = $"a column" * 2)
-#     @test df2 == transform(df, ["a column", 2] => ByRow(+) => :c)
-#     #"
-#     @test df2 == transform(df, ["a column", 2] => ByRow(+) => :c)
-# end
+@testset "stringa and int column specification" begin
+    df = DataFrame([Symbol("a column") => [1, 2, 3], :b => [4, 5, 6]])
+    df2 = @transform(df, :c = $"a column" * $2)
+    #"
+    @test df2 == transform(df, ["a column", names(df)[2]] => ByRow(*) => :c)
+end
 
 module Mod1
     module Mod2
