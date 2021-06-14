@@ -10,7 +10,7 @@ The following macros are currently available:
 - `@subset` / `@subset!`
 - `@sort` / `@sort!`
 
-Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for longer piped transformations:
+Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convenient syntax for longer piped transformations:
 
 ```julia
 using DFMacros
