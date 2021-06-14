@@ -264,6 +264,20 @@ a_string = "weight"
    1 │      303.229
 ```
 
+You can use strings and integers directly with `$`.
+
+```julia
+@combine(df, :sum = sum($"weight_kg" .* $4))
+```
+
+```
+1×1 DataFrame
+ Row │ sum
+     │ Float64
+─────┼─────────
+   1 │ 51236.2
+```
+
 ### passmissing flag @m
 
 ```julia

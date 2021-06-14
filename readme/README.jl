@@ -94,6 +94,9 @@ the_column = :weight_kg
 a_string = "weight"
 @combine(df, :total_weight = sum($(a_string * "_kg")))
 
+# You can use strings and integers directly with `$`.
+@combine(df, :sum = sum($"weight_kg" .* $4))
+
 # ### passmissing flag @m
 
 df = DataFrame(name = ["joe", "jim", missing, "james"])
