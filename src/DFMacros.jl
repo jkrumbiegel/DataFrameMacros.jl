@@ -5,47 +5,28 @@ using DataFrames: transform, transform!, select, select!, combine, subset, subse
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!
 
-struct Transform end
-struct Transform! end
-struct Select end
-struct Select! end
-struct Combine end
-struct Subset end
-struct Subset! end
-struct Sort end
-struct Sort! end
+funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :subset!
 
-
-macro transform(exprs...)
-    macrohelper(Transform(), exprs...)
+for f in funcsymbols
+    @eval begin
+        export $(Symbol("@", f))
+        macro $f(exprs...)
+            macrohelper($f, exprs...)
+        end
+    end
 end
 
-macro select(exprs...)
-    macrohelper(Select(), exprs...)
-end
-
-macro subset(exprs...)
-    macrohelper(Subset(), exprs...)
-end
-
-macro transform!(exprs...)
-    macrohelper(Transform!(), exprs...)
-end
-
-macro select!(exprs...)
-    macrohelper(Select!(), exprs...)
-end
-
-macro subset!(exprs...)
-    macrohelper(Subset!(), exprs...)
-end
-
-macro combine(exprs...)
-    macrohelper(Combine(), exprs...)
-end
+defaultbyrow(::typeof(transform)) = true
+defaultbyrow(::typeof(select)) = true
+defaultbyrow(::typeof(subset)) = true
+defaultbyrow(::typeof(transform!)) = true
+defaultbyrow(::typeof(select!)) = true
+defaultbyrow(::typeof(subset!)) = true
+defaultbyrow(::typeof(combine)) = false
 
 macro groupby(exprs...)
-    f, df, func, kw_exprs = f_df_funcs_kwexprs(Select(), exprs...)
+    f = select
+    df, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
 
     select_kwexprs = [Expr(:kw, :copycols, false)]
     select_call = build_call(f, df, func, select_kwexprs)
@@ -68,7 +49,8 @@ macro sort!(exprs...)
 end
 
 function sorthelper(exprs...; mutate)
-    f, df, func, kw_exprs = f_df_funcs_kwexprs(Select(), exprs...)
+    f = select
+    df, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
 
     select_kwexprs = [Expr(:kw, :copycols, false)]
     select_call = build_call(f, df, func, select_kwexprs)
@@ -90,24 +72,8 @@ function sorthelper(exprs...; mutate)
     end
 end
 
-dataframesfunc(::Transform) = transform
-dataframesfunc(::Transform!) = transform!
-dataframesfunc(::Select) = select
-dataframesfunc(::Select!) = select!
-dataframesfunc(::Combine) = combine
-dataframesfunc(::Subset) = subset
-dataframesfunc(::Subset!) = subset!
-
-defaultbyrow(::Transform) = true
-defaultbyrow(::Select) = true
-defaultbyrow(::Subset) = true
-defaultbyrow(::Transform!) = true
-defaultbyrow(::Select!) = true
-defaultbyrow(::Subset!) = true
-defaultbyrow(::Combine) = false
-
-function macrohelper(T, exprs...)
-    f, df, converted, kw_exprs = f_df_funcs_kwexprs(T, exprs...)
+function macrohelper(f, exprs...)
+    df, converted, kw_exprs = df_funcs_kwexprs(f, exprs...)
     build_call(f, df, converted, kw_exprs)
 end
 
@@ -115,7 +81,7 @@ function build_call(f, df, converted, kw_exprs)
     :($f($(esc(df)), $(converted...); $(map(esc, kw_exprs)...)))
 end
 
-function f_df_funcs_kwexprs(T, exprs...)
+function df_funcs_kwexprs(f, exprs...)
     
     if length(exprs) >= 1 && exprs[1] isa Expr && exprs[1].head == :parameters
         kw_exprs = exprs[1].args
@@ -127,22 +93,21 @@ function f_df_funcs_kwexprs(T, exprs...)
         kw_exprs = []
     end
 
-    converted = map(e -> convert_source_funk_sink_expr(T, e, df), source_func_sink_exprs)
-    f = dataframesfunc(T)
-    f, df, converted, kw_exprs
+    converted = map(e -> convert_source_funk_sink_expr(f, e, df), source_func_sink_exprs)
+    df, converted, kw_exprs
 end
 
-convert_source_funk_sink_expr(T, x, df) = x
+convert_source_funk_sink_expr(f, x, df) = x
 
-function convert_source_funk_sink_expr(T, e::Expr, df)
+function convert_source_funk_sink_expr(f, e::Expr, df)
     target, formula = split_formula(e)
     flags, formula = extract_macro_flags(formula)
     columns = gather_columns(formula)
     func, columns = make_function_expr(formula, columns)
     clean_columns = map(c -> clean_column(c, df), columns)
 
-    byrow = (defaultbyrow(T) && !('c' in flags)) ||
-        (!defaultbyrow(T) && ('r' in flags))
+    byrow = (defaultbyrow(f) && !('c' in flags)) ||
+        (!defaultbyrow(f) && ('r' in flags))
 
     pass_missing = 'm' in flags
 
