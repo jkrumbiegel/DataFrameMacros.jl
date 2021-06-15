@@ -9,7 +9,6 @@ funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :su
 
 for f in funcsymbols
     @eval begin
-        export $(Symbol("@", f))
         macro $f(exprs...)
             macrohelper($f, exprs...)
         end
