@@ -1,7 +1,27 @@
+```julia
+using Base: NamedTuple
+```
+
 # DFMacros.jl
 
 DFMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
 It offers macros that translate expressions into [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) function calls.
+
+Here is a simple example:
+
+```julia
+df = DataFrame(name = ["Mary Louise Parker", "Thomas John Fisher"])
+@transform(df, :middle_initial = split(:name)[2][1] * ".")
+```
+
+```
+2×2 DataFrame
+ Row │ name                middle_initial
+     │ String              String
+─────┼────────────────────────────────────
+   1 │ Mary Louise Parker  L.
+   2 │ Thomas John Fisher  J.
+```
 
 Unlike DataFrames.jl, most operations are **row-wise** by default.
 This often results in cleaner code that's easier to understand and reason about, especially when string or object manipulation is involved.
