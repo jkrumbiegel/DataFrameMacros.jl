@@ -1,7 +1,3 @@
-```julia
-using Base: NamedTuple
-```
-
 # DFMacros.jl
 
 DFMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
