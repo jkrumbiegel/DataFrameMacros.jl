@@ -1,6 +1,12 @@
-# # DFMacros
+# # DFMacros.jl
 
-# This package offers an opinionated take on DataFrame manipulation in Julia with a syntax geared towards convenience.
+# DFMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
+# It offers macros that translate expressions into [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) function calls.
+
+# Unlike DataFrames.jl, most operations are **row-wise** by default.
+# This often results in cleaner code that's easier to understand and reason about, especially when string or object manipulation is involved.
+# Such operations often don't have a clean broadcasting syntax, for example, `somestring[2]` is easier to read than `getindex.(somestrings, 2)`.
+# The same is true for `someobject.property` and `getproperty.(someobjects, :property)`.
 
 # The following macros are currently available:
 # - `@transform` / `@transform!`
@@ -11,7 +17,7 @@
 # - `@sort` / `@sort!`
 # - `@unique`
 
-# Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for longer piped transformations:
+# Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
 
 using DFMacros
 using DataFrames
@@ -36,7 +42,8 @@ end
 
 # ## Design choices
 
-# These are the most important opinionated aspects that differ from other packages:
+# These are the most important aspects that differ from other packages ([DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl) in particular):
+
 # - All macros except `@combine` work **row-wise** by default. This reduces syntax complexity in most cases because no broadcasting is necessary. A flag macro (`@c` or `@r`) can be used to switch between row/column-based mode when needed.
 # - `@groupby` and `@sort` allow using arbitrary expressions including multiple columns, without having to `@transform` first and repeat the new column names.
 # - Column expressions are interpolated into the macro with `$`.
