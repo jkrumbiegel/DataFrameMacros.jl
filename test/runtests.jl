@@ -119,7 +119,7 @@ end
     @select!(df, :a, :c)
 end
 
-@testset "stringa and int column specification" begin
+@testset "string and int column specification" begin
     df = DataFrame([Symbol("a column") => [1, 2, 3], :b => [4, 5, 6]])
     df2 = @transform(df, :c = $"a column" * $2)
     #"
