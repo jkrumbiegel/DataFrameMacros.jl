@@ -3,9 +3,9 @@ module DFMacros
 using Base: ident_cmp
 using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby
 
-export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!
+export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 
-funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :subset!
+funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :subset!, :unique
 
 for f in funcsymbols
     @eval begin
@@ -22,6 +22,7 @@ defaultbyrow(::typeof(transform!)) = true
 defaultbyrow(::typeof(select!)) = true
 defaultbyrow(::typeof(subset!)) = true
 defaultbyrow(::typeof(combine)) = false
+defaultbyrow(::typeof(unique)) = true
 
 macro groupby(exprs...)
     f = select

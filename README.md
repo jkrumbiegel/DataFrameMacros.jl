@@ -9,6 +9,7 @@ The following macros are currently available:
 - `@combine`
 - `@subset` / `@subset!`
 - `@sort` / `@sort!`
+- `@unique`
 
 Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for longer piped transformations:
 
@@ -64,6 +65,7 @@ These are the most important opinionated aspects that differ from other packages
 - [column flag @c](#column-flag-c)
 - [@groupby & @combine](#groupby--combine)
 - [@sort](#sort)
+- [@unique](#unique)
 - [interpolating column expressions](#interpolating-column-expressions)
 - [passmissing flag @m](#passmissing-flag-m)
 - [escaping symbols](#escaping-symbols)
@@ -232,6 +234,22 @@ Group 2 (2 rows): id_iseven = true
    3 │     2  a        61.3691    173.272
    4 │     4  b        59.6226    161.111
    5 │     1  b        64.9048    161.561
+```
+
+### @unique
+
+```julia
+namedf = DataFrame(name = ["Joe Smith", "Eric Miller", "Frank Smith"])
+@unique(namedf, last(split(:name)))
+```
+
+```
+2×1 DataFrame
+ Row │ name
+     │ String
+─────┼─────────────
+   1 │ Joe Smith
+   2 │ Eric Miller
 ```
 
 ### interpolating column expressions

@@ -9,6 +9,7 @@
 # - `@combine`
 # - `@subset` / `@subset!`
 # - `@sort` / `@sort!`
+# - `@unique`
 
 # Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for longer piped transformations:
 
@@ -82,6 +83,11 @@ g = @groupby(df, iseven(:id))
 # ### @sort
 
 @sort(df, sqrt(:height_cm) / :weight_kg; rev = true)
+
+# ### @unique
+
+namedf = DataFrame(name = ["Joe Smith", "Eric Miller", "Frank Smith"])
+@unique(namedf, last(split(:name)))
 
 # ### interpolating column expressions
 
