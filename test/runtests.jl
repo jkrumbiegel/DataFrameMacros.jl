@@ -165,3 +165,9 @@ end
         :a => ByRow(Mod1.Mod2.func2),
     )
 end
+
+@testset "getproperty dot syntax" begin
+    df = DataFrame(a = [(;b = 1), (;b = 3)])
+    df2 = @transform(df, :c = :a.b)
+    @test df2 == transform(df, :a => ByRow(x -> x.b) => :c)
+end

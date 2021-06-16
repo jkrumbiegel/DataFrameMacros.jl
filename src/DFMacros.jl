@@ -147,7 +147,13 @@ function gather_columns!(columns, x; unique)
             push!(columns, x)
         end
     elseif x isa Expr && !(is_escaped_symbol(x)) && !(is_dot_quotenode_expr(x))
-        foreach(x.args) do arg
+        # we have to exclude quotenodes in dot syntax such as the b in `:a.b`
+        args_to_scan = if x.head == :. && length(x.args) == 2 && x.args[2] isa QuoteNode
+            x.args[1:1]
+        else
+            x.args
+        end
+        foreach(args_to_scan) do arg
             gather_columns!(columns, arg; unique = unique)
         end
     end
