@@ -93,6 +93,7 @@ These are the most important aspects that differ from other packages ([DataFrame
 - [passmissing flag @m](#passmissing-flag-m)
 - [escaping symbols](#escaping-symbols)
 - [`@t` flag macro for automatic `AsTable`](#t-flag-macro-for-automatic-AsTable)
+- [block syntax](#block-syntax)
 
 ```julia
 using DFMacros
@@ -383,5 +384,35 @@ end
    1 │     1      4     10      9
    2 │     2      5     14     11
    3 │     3      6     18     13
+```
+
+### block syntax
+
+You can pass a begin/end block to every macro instead of multiple separate arguments.
+
+```julia
+df = DataFrame(
+    id = shuffle(1:5),
+    group = rand('a':'b', 5),
+    weight_kg = randn(5) .* 5 .+ 60,
+    height_cm = randn(5) .* 10 .+ 170)
+
+@transform df begin
+    :weight_g = :weight_kg / 1000
+    :BMI = :weight_kg / (:height_cm / 100) ^ 2
+    :weight_z = @c (:weight_kg .- mean(:weight_kg)) / std(:weight_kg)
+end
+```
+
+```
+5×7 DataFrame
+ Row │ id     group  weight_kg  height_cm  weight_g   BMI      weight_z
+     │ Int64  Char   Float64    Float64    Float64    Float64  Float64
+─────┼───────────────────────────────────────────────────────────────────
+   1 │     1  b        61.3886    193.136  0.0613886  16.4574   0.377584
+   2 │     3  a        67.6196    161.289  0.0676196  25.9933   1.04682
+   3 │     5  a        51.1114    173.457  0.0511114  16.9876  -0.726246
+   4 │     4  a        45.3347    168.441  0.0453347  15.9784  -1.34669
+   5 │     2  a        63.9113    193.33   0.0639113  17.0993   0.648531
 ```
 

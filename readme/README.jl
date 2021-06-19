@@ -148,3 +148,19 @@ df2 = @transform df @t begin
     :y = x * 2
     :z = x + 4
 end
+
+# ### block syntax
+
+# You can pass a begin/end block to every macro instead of multiple separate arguments.
+
+df = DataFrame(
+    id = shuffle(1:5),
+    group = rand('a':'b', 5),
+    weight_kg = randn(5) .* 5 .+ 60,
+    height_cm = randn(5) .* 10 .+ 170)
+
+@transform df begin
+    :weight_g = :weight_kg / 1000
+    :BMI = :weight_kg / (:height_cm / 100) ^ 2
+    :weight_z = @c (:weight_kg .- mean(:weight_kg)) / std(:weight_kg)
+end
