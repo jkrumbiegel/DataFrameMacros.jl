@@ -195,4 +195,12 @@ end
         varz = x + 4
         (y = vary, z = varz)
     end) => AsTable)
+
+    df3 = @transform(df, @t begin
+        if iseven(:a)
+            :z = :a
+        else
+            :z = :b
+        end
+    end)
 end

@@ -298,12 +298,16 @@ function replace_assigned_symbols(e)
     new_ex = postwalk(e) do x
         if x isa Expr && x.head == :(=) && x.args[1] isa QuoteNode
             sym = x.args[1].value
-            if sym in symbols
-                error("In @t mode, you can only assign to each new symbol once. Assigned to $sym multiple times.")
+            i = findfirst(==(sym), symbols)
+
+            if i === nothing
+                push!(symbols, sym)
+                gs = gensym()
+                push!(gensyms, gs)
+            else
+                gs = gensyms[i]
             end
-            push!(symbols, sym)
-            gs = gensym()
-            push!(gensyms, gs)
+            
             Expr(:(=), gs, x.args[2:end]...)
         else
             x
