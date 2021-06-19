@@ -171,3 +171,28 @@ end
     df2 = @transform(df, :c = :a.b)
     @test df2 == transform(df, :a => ByRow(x -> x.b) => :c)
 end
+
+
+@testset "block syntax" begin
+    df = DataFrame(a = 1:3, b = 'a':'c')
+    df2 = @transform df begin
+        :c = :a + 1
+        :d = string(:b) ^ 2
+    end
+    @test df2 == @transform(df, :c = :a + 1, :d = string(:b) ^ 2)
+end
+
+@testset "table shortcut @t" begin
+    df = DataFrame(a = 1:3, b = 4:6)
+    df2 = @transform(df, @t begin
+        x = :a + :b
+        :y = x * 2
+        :z = x + 4
+    end)
+    @test df2 == transform(df, [:a, :b] => ByRow((a, b) -> begin
+        x = a + b
+        vary = x * 2
+        varz = x + 4
+        (y = vary, z = varz)
+    end) => AsTable)
+end
