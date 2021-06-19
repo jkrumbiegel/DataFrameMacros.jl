@@ -1,4 +1,4 @@
-module DFMacros
+module DataFrameMacros
 
 using Base: ident_cmp
 using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable

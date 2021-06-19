@@ -1,4 +1,4 @@
 [deps]
-DFMacros = "75880514-38bc-4a95-a458-c2aea5a3a702"
+DataFrameMacros = "75880514-38bc-4a95-a458-c2aea5a3a702"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"

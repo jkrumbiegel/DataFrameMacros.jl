@@ -1,6 +1,6 @@
-# DFMacros.jl
+# DataFrameMacros.jl
 
-DFMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
+DataFrameMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
 It offers macros that translate expressions into [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) function calls.
 
 Here is a simple example:
@@ -36,7 +36,7 @@ The following macros are currently available:
 Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
 
 ```julia
-using DFMacros
+using DataFrameMacros
 using DataFrames
 using Chain
 using Random
@@ -96,7 +96,7 @@ These are the most important aspects that differ from other packages ([DataFrame
 - [block syntax](#block-syntax)
 
 ```julia
-using DFMacros
+using DataFrameMacros
 using DataFrames
 using Random
 using Statistics

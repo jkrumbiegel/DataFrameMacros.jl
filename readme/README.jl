@@ -1,11 +1,11 @@
-# # DFMacros.jl
+# # DataFrameMacros.jl
 
-# DFMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
+# DataFrameMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
 # It offers macros that translate expressions into [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) function calls.
 
 # Here is a simple example:
 
-using DFMacros #hide
+using DataFrameMacros #hide
 using DataFrames #hide
 df = DataFrame(name = ["Mary Louise Parker", "Thomas John Fisher"])
 @transform(df, :middle_initial = split(:name)[2][1] * ".")
@@ -27,7 +27,7 @@ df = DataFrame(name = ["Mary Louise Parker", "Thomas John Fisher"])
 
 # Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
 
-using DFMacros
+using DataFrameMacros
 using DataFrames
 using Chain
 using Random
@@ -64,7 +64,7 @@ end
 
 # TOC
 
-using DFMacros
+using DataFrameMacros
 using DataFrames
 using Random
 using Statistics

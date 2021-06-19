@@ -1,4 +1,4 @@
-using DFMacros
+using DataFrameMacros
 using DataFrames
 using Test
 
