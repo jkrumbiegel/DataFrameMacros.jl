@@ -58,6 +58,7 @@ end
 # - Keyword arguments to the macro-underlying functions work by separating them from column expressions with the `;` character.
 # - Target column names are written with `:` symbols to avoid visual ambiguity (`:newcol = ...`). This also allows to use `AsTable` as a target like in DataFrames.jl.
 # - The flag macro can also include the character `m` to switch on automatic `passmissing` in row-wise mode.
+# - There is also a `@t` flag macro, which extracts every `:sym = expression` expression and collects the new symbols in a named tuple, while setting the target to `AsTable`.
 
 # ## Examples
 
@@ -133,3 +134,17 @@ df = DataFrame(name = ["joe", "jim", missing, "james"])
 
 df = DataFrame(color = [:red, :green, :blue])
 @transform(df, :is_red = :color == $:red)
+
+
+# ### `@t` flag macro for automatic `AsTable`
+
+# To use `AsTable` as a target, you usually have to construct a NamedTuple in the passed function.
+# You can avoid both passing `AsTable` explicitly and constructing the NamedTuple by using the `@t` flag macro.
+# All expressions of the type `:symbol = expression` are collected, the `:symbol`s are replaced with anonymous variables, and these variables are collected in a NamedTuple as the return value automatically.
+
+df = DataFrame(a = 1:3, b = 4:6)
+df2 = @transform df @t begin
+    x = :a + :b
+    :y = x * 2
+    :z = x + 4
+end
