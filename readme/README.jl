@@ -83,7 +83,7 @@ df = DataFrame(
 @select(df, AsTable = (w = :weight_kg, h = :height_cm))
 
 # ### @transform
-@transform(df, :weight_g = :weight_kg / 1000)
+@transform(df, :weight_g = :weight_kg * 1000)
 #-
 @transform(df, :BMI = :weight_kg / (:height_cm / 100) ^ 2)
 # #### column flag @c
