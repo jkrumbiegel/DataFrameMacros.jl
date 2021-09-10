@@ -4,6 +4,7 @@ using Base: ident_cmp
 using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
+export @cases
 
 funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :subset!, :unique
 
@@ -317,5 +318,99 @@ function replace_assigned_symbols(e)
 end
 
 
+macro cases(expr::Expr)
+    if expr.head == :block
+        _cases(filter(x -> !(x isa LineNumberNode), expr.args)...)
+    else
+        _cases(expr)
+    end
+end
+
+"""
+    @cases(exprs...)
+
+Builds an if-elseif-else expression out of multiple expressions `exprs`. Each expression except the last must be a pair, where the left side is the conditional expression that must evaluate to true for the right side to be returned.
+
+The last expression can be a pair, in which case it is used as a normal condition, and in case no match is found, an error is thrown. If the last expression is no pair, it is used as the default value in case no other expression matches.
+
+## Examples
+
+```julia
+df = DataFrame(x = [1, 2, 3])
+
+@transform(df, :y = @cases(:x == 1 => "a", :x < 3 => "b", "c"))
+
+3×2 DataFrame
+ Row │ x      y      
+     │ Int64  String 
+─────┼───────────────
+   1 │     1  a
+   2 │     2  b
+   3 │     3  c
+```
+
+Specifying no default can help to make sure that no unexpected value is passed.
+
+```
+df = DataFrame(sex = ["male", "female", "NA"])
+
+# this will throw an error because there is no match
+@transform(df, :sex_abbreviation = @cases(:sex == "male" => "m", :sex == "female" => "f"))
+```
+
+You can also pass a single begin-end block, which works similarly to the multiple arguments version, with one expression per line.
+
+```julia
+@transform(df, :y = @cases begin
+    :x == 1 => "a"
+    :x < 3 => "b"
+    "c"
+end)
+```
+"""
+macro cases(expr, exprs...)
+    _cases(expr, exprs...)
+end
+
+function _cases(exprs...)
+    if length(exprs) == 1
+        if ispair(exprs[1])
+            return esc(Expr(:if, exprs[1].args[2:3]..., :(error("No case matched input."))))
+        else
+            return esc(exprs[1])
+        end
+    end
+
+    for i in 1:length(exprs) - 1
+        if !ispair(exprs[i])
+            error("Case $i is not a pair: $(exprs[i])")
+        end
+    end
+
+    last_default = !ispair(exprs[end])
+
+    if_expr = Expr(:if)
+    current = if_expr
+    for i in 1:length(exprs) - 1
+        append!(current.args, exprs[i].args[2:3])
+        if i < length(exprs) - 1
+            new = Expr(:elseif)
+            push!(current.args, new)
+            current = new
+        end
+    end
+
+    if last_default
+        push!(current.args, exprs[end])
+    else
+        last = Expr(:elseif, exprs[end].args[2:3]..., :(error("No case matched.")))
+        push!(current.args, last)
+    end
+    
+    esc(if_expr)
+end
+
+ispair(x) = false
+ispair(e::Expr) = e.head == :call && length(e.args) == 3 && e.args[1] == :(=>)
 
 end

@@ -204,3 +204,36 @@ end
         end
     end)
 end
+
+
+@testset "@cases" begin
+    df = DataFrame(x = 1:3)
+    y = ["a", "b", "c"]
+
+    result = @transform(df, :y = @cases(:x == 1 => "a", :x < 3 => "b", :x == 3 => "c"))
+    @test result.y == y
+
+    result = @transform(df, :y = @cases(:x == 1 => "a", :x < 3 => "b", "c"))
+    @test result.y == y
+
+    result = @transform(df, :y = @cases("c"))
+    @test result.y == ["c", "c", "c"]
+
+    result = @transform(df, :y = @cases begin
+        :x == 1 => "a"
+        :x < 3 => "b"
+        :x == 3 => "c"
+    end)
+    @test result.y == y
+
+    result = @transform(df, :y = @cases begin
+        :x == 1 => "a"
+        :x < 3 => "b"
+        "c"
+    end)
+    @test result.y == y
+
+    @test_throws ErrorException @transform(df, :y = @cases begin
+        :x == 1 => "a"
+    end)
+end
