@@ -2,9 +2,8 @@ using Documenter
 using DataFrameMacros
 
 makedocs(
-    sitename = "DataFrameMacros",
+    sitename = "DataFrameMacros.jl",
     format = Documenter.HTML(),
-    modules = [DataFrameMacros]
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
