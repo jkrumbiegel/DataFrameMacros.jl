@@ -9,6 +9,13 @@ funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :su
 
 for f in funcsymbols
     @eval begin
+        """
+            @$($f)(df, args...; kwargs...)
+
+        The `@$($f)` macro converts an expression into
+
+        The transformation logic for all DataFrameMacros macros is explained in the `DataFrameMacros` docstring.
+        """
         macro $f(exprs...)
             macrohelper($f, exprs...)
         end
@@ -316,6 +323,111 @@ function replace_assigned_symbols(e)
     new_ex, symbols, gensyms
 end
 
+
+@doc """
+DataFrameMacros offers macros which transform expressions for DataFrames functions that use the `source => function => sink` mini-language.
+The supported functions are `@transform`/`@transform!`, `@select/@select!`, `@groupby`, `@combine`, `@subset`/`@subset!`, `@sort`/`@sort!` and `@unique`.
+
+All macros have signatures of the form:
+```
+@macro(df, args...; kwargs...)
+```
+
+Each positional argument in `args` is converted to a `source => function => sink` expression for the transformation mini-language of DataFrames.
+By default, all macros execute the given function **by-row**, only `@combine` executes **by-column**.
+
+For example, the following pairs of expressions are equivalent:
+
+```
+transform(df, :x => ByRow(x -> x + 1) => :y)
+@transform(df, :y = :x + 1)
+
+sort(df, :x => x -> x ^ 2)
+@sort(df, :x ^ 2)
+
+combine(df, :x => (x -> sum(x) / 5) => :result)
+@combine(df, :result = sum(:x) / 5)
+```
+
+## Column references
+
+Each positional argument must be of the form `[sink =] some_expression`.
+Columns can be referenced within `sink` or `some_expression` using a `Symbol`, a `String`, or an `Int`.
+Any column identifier that is not a `Symbol` must be prefaced with the interpolation symbol `\$`.
+The `\$` interpolation symbol also allows to use variables or expressions that evaluate to column identifiers.
+
+The five expressions in the following code block are equivalent.
+
+```
+using DataFrames
+using DataFrameMacros
+
+df = DataFrame(x = 1:3)
+
+@transform(df, :y = :x + 1)
+@transform(df, :y = \$"x" + 1)
+@transform(df, :y = \$1 + 1)
+col = :x
+@transform(df, :y = \$col + 1)
+cols = [:x, :y, :z]
+@transform(df, :y = \$(cols[1]) + 1)
+```
+
+## Passing multiple expressions
+
+Multiple expressions can be passed as multiple positional arguments, or alternatively as separate lines in a `begin end` block. You can use parentheses, or omit them. The following expressions are equivalent:
+
+```
+@transform(df, :y = :x + 1, :z = :x * 2)
+@transform df :y = :x + 1 :z = :x * 2
+@transform df begin
+    :y = :x + 1
+    :z = :x * 2
+end
+@transform(df, begin
+    :y = :x + 1
+    :z = :x * 2
+end)
+```
+
+## Flag macros
+
+You can modify the behavior of all macros using flag macros, which are not real macros but only signal changed behavior for a positional argument to the outer macro.
+
+Each flag is specified with a single character, and you can combine these characters as well.
+The supported flags are:
+
+| character | meaning |
+|:--|:--|
+| r | Switch to **by-row** processing. |
+| c | Switch to **by-column** processing. |
+| m | Wrap the function expression in `passmissing`. |
+| t | Collect all `:symbol = expression` expressions into a `NamedTuple` where `(; symbol = expression, ...)` and set the sink to `AsTable`. |
+
+### Example `@c`
+
+To compute a centered column with `@transform`, you need access to the whole column at once and signal this with the `@c` flag.
+
+```
+using Statistics
+using DataFrames
+using DataFrameMacros
+
+df = DataFrame(x = 1:5)
+@transform(df, :x_centered = @c :x .- mean(:x))
+```
+
+### Example `@m`
+
+Many functions need to be wrapped in `passmissing` to correctly return `missing` if any input is `missing`.
+This can be achieved with the `@m` flag macro.
+
+```
+df = DataFrame(name = ["alice", "bob", missing])
+@transform(df, @m :name_upper = uppercasefirst(:name))
+```
+
+""" DataFrameMacros
 
 
 end
