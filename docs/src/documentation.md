@@ -1,0 +1,5 @@
+# Documentation
+
+```@autodocs
+Modules = [DataFrameMacros]
+```
