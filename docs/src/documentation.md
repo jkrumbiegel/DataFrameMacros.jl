@@ -1,4 +1,4 @@
-# Macros
+# Documentation
 
 ```@autodocs
 Modules = [DataFrameMacros]

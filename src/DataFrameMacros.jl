@@ -1,7 +1,7 @@
 module DataFrameMacros
 
 using Base: ident_cmp
-using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable
+using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 
@@ -12,9 +12,11 @@ for f in funcsymbols
         """
             @$($f)(df, args...; kwargs...)
 
-        The `@$($f)` macro converts an expression into
+        The `@$($f)` macro builds a `DataFrames.$($f)` call. Each expression in `args` is converted to a `src => function => sink` construct that conforms to the transformation mini-language of DataFrames.
 
-        The transformation logic for all DataFrameMacros macros is explained in the `DataFrameMacros` docstring.
+        Keyword arguments `kwargs` are passed down to `$($f)` but have to be separated from the positional arguments by a semicolon `;`.
+
+        The transformation logic for all DataFrameMacros macros is explained in the `DataFrameMacros` module docstring, accessible via `?DataFrameMacros`.
         """
         macro $f(exprs...)
             macrohelper($f, exprs...)
@@ -329,7 +331,7 @@ DataFrameMacros offers macros which transform expressions for DataFrames functio
 The supported functions are `@transform`/`@transform!`, `@select/@select!`, `@groupby`, `@combine`, `@subset`/`@subset!`, `@sort`/`@sort!` and `@unique`.
 
 All macros have signatures of the form:
-```
+```julia
 @macro(df, args...; kwargs...)
 ```
 
@@ -338,11 +340,11 @@ By default, all macros execute the given function **by-row**, only `@combine` ex
 
 For example, the following pairs of expressions are equivalent:
 
-```
+```julia
 transform(df, :x => ByRow(x -> x + 1) => :y)
 @transform(df, :y = :x + 1)
 
-sort(df, :x => x -> x ^ 2)
+sort(df, :x => ByRow(x -> x ^ 2))
 @sort(df, :x ^ 2)
 
 combine(df, :x => (x -> sum(x) / 5) => :result)
@@ -358,7 +360,7 @@ The `\$` interpolation symbol also allows to use variables or expressions that e
 
 The five expressions in the following code block are equivalent.
 
-```
+```julia
 using DataFrames
 using DataFrameMacros
 
@@ -377,7 +379,7 @@ cols = [:x, :y, :z]
 
 Multiple expressions can be passed as multiple positional arguments, or alternatively as separate lines in a `begin end` block. You can use parentheses, or omit them. The following expressions are equivalent:
 
-```
+```julia
 @transform(df, :y = :x + 1, :z = :x * 2)
 @transform df :y = :x + 1 :z = :x * 2
 @transform df begin
@@ -408,13 +410,28 @@ The supported flags are:
 
 To compute a centered column with `@transform`, you need access to the whole column at once and signal this with the `@c` flag.
 
-```
+```julia
 using Statistics
 using DataFrames
 using DataFrameMacros
 
-df = DataFrame(x = 1:5)
-@transform(df, :x_centered = @c :x .- mean(:x))
+julia> df = DataFrame(x = 1:3)
+3×1 DataFrame
+ Row │ x     
+     │ Int64 
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+
+julia> @transform(df, :x_centered = @c :x .- mean(:x))
+3×2 DataFrame
+ Row │ x      x_centered 
+     │ Int64  Float64    
+─────┼───────────────────
+   1 │     1        -1.0
+   2 │     2         0.0
+   3 │     3         1.0
 ```
 
 ### Example `@m`
@@ -422,12 +439,55 @@ df = DataFrame(x = 1:5)
 Many functions need to be wrapped in `passmissing` to correctly return `missing` if any input is `missing`.
 This can be achieved with the `@m` flag macro.
 
+```julia
+julia> df = DataFrame(name = ["alice", "bob", missing])
+3×1 DataFrame
+ Row │ name    
+     │ String? 
+─────┼─────────
+   1 │ alice
+   2 │ bob
+   3 │ missing 
+
+julia> @transform(df, :name_upper = @m uppercasefirst(:name))
+3×2 DataFrame
+ Row │ name     name_upper 
+     │ String?  String?    
+─────┼─────────────────────
+   1 │ alice    Alice
+   2 │ bob      Bob
+   3 │ missing  missing    
 ```
-df = DataFrame(name = ["alice", "bob", missing])
-@transform(df, @m :name_upper = uppercasefirst(:name))
+
+### Example `@t`
+
+In DataFrames, you can return a `NamedTuple` from a function and then automatically expand it into separate columns by using `AsTable` as the sink value. To simplify this process, you can use the `@t` flag macro, which collects all statements of the form `:symbol = expression` in the function body, collects them into a `NamedTuple`, and sets the sink argument to `AsTable`.
+
+```julia
+julia> df = DataFrame(name = ["Alice Smith", "Bob Miller"])
+2×1 DataFrame
+ Row │ name        
+     │ String      
+─────┼─────────────
+   1 │ Alice Smith
+   2 │ Bob Miller
+
+julia> @transform(df, @t begin
+           s = split(:name)
+           :first_name = s[1]
+           :last_name = s[2]
+       end)
+2×3 DataFrame
+ Row │ name         first_name  last_name  
+     │ String       SubString…  SubString… 
+─────┼─────────────────────────────────────
+   1 │ Alice Smith  Alice       Smith
+   2 │ Bob Miller   Bob         Miller
 ```
 
 """ DataFrameMacros
 
+const _titanic = include("titanic.jl")
+titanic() = deepcopy(_titanic)
 
 end

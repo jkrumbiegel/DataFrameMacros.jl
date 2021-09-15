@@ -6,14 +6,12 @@ It offers macros that translate expressions into [DataFrames.jl](https://github.
 
 Here is a simple example:
 
-```@example
+```@repl
 using DataFrameMacros #hide
 using DataFrames #hide
 df = DataFrame(name = ["Mary Louise Parker", "Thomas John Fisher"])
 
 result = @transform(df, :middle_initial = split(:name)[2][1] * ".")
-
-show(result)
 ```
 
 Unlike DataFrames.jl, most operations are **row-wise** by default.
