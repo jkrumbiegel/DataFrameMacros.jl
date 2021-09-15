@@ -1,14 +1,12 @@
 # DataFrameMacros.jl
 
-DataFrameMacros.jl is an opinionated take on DataFrame manipulation in Julia with a syntax geared towards clarity, brevity and convenience.
-It offers macros that translate expressions into [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) function calls.
-
+DataFrameMacros.jl offers macros for DataFrame manipulation with a syntax geared towards clarity, brevity and convenience.
+Each macro translates expressions into the more verbose `source => function => sink` mini-language from [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl).
 
 Here is a simple example:
 
 ```@repl
-using DataFrameMacros #hide
-using DataFrames #hide
+using DataFrameMacros, DataFrames
 df = DataFrame(name = ["Mary Louise Parker", "Thomas John Fisher"])
 
 result = @transform(df, :middle_initial = split(:name)[2][1] * ".")
