@@ -163,3 +163,12 @@ It signals that all `:symbol = expression` expressions that are found are rewrit
     :last_name = nameparts[1]
 end)
 ```
+
+You can also use tuple destructuring syntax with the `@t` macro.
+This can often make assignments of multiple columns even more terse:
+
+```@repl 1
+@select(df, @t begin
+    :last_name, :title, :first_name, rest... = split(:Name, r"[\s,]+")
+end)
+```
