@@ -203,4 +203,18 @@ end
             :z = :b
         end
     end)
+
+    # tuple destructuring
+    df4 = @transform(df, @t begin
+        x = :a + :b
+        :y, :z = x * 2, x + 4
+    end)
+    @test df4 == df2
+
+    # tuple destructuring with non symbols mixed in
+    df5 = @transform(df, @t begin
+        x = :a + :b
+        :y, qqq, :z = x * 2, "hello", x + 4
+    end)
+    @test df5 == df2 == df4
 end

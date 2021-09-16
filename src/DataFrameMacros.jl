@@ -304,20 +304,35 @@ end
 function replace_assigned_symbols(e)
     symbols = Symbol[]
     gensyms = Symbol[]
+
+    function gensym_for_sym(sym)
+        i = findfirst(==(sym), symbols)
+
+        if i === nothing
+            push!(symbols, sym)
+            gs = gensym()
+            push!(gensyms, gs)
+        else
+            gs = gensyms[i]
+        end
+        gs
+    end
+
     new_ex = postwalk(e) do x
+        # normal case :symbol = expression
         if x isa Expr && x.head == :(=) && x.args[1] isa QuoteNode
             sym = x.args[1].value
-            i = findfirst(==(sym), symbols)
-
-            if i === nothing
-                push!(symbols, sym)
-                gs = gensym()
-                push!(gensyms, gs)
-            else
-                gs = gensyms[i]
-            end
-            
+            gs = gensym_for_sym(sym)
             Expr(:(=), gs, x.args[2:end]...)
+        # tuple destructuring case x, y = expr1, expr2 where x or y (or others) are :symbols
+        elseif x isa Expr && x.head == :(=) && x.args[1] isa Expr && x.args[1].head == :tuple
+            for (i, a) in enumerate(x.args[1].args)
+                if a isa QuoteNode
+                    sym = a.value
+                    x.args[1].args[i] = gensym_for_sym(sym)
+                end
+            end
+            x
         else
             x
         end
@@ -483,6 +498,12 @@ julia> @transform(df, @t begin
 ─────┼─────────────────────────────────────
    1 │ Alice Smith  Alice       Smith
    2 │ Bob Miller   Bob         Miller
+```
+
+The `@t` flag also works with tuple destructuring syntax, so the previous example can be shortened to:
+
+```julia
+@transform(df, @t :first_name, :last_name = split(:name))
 ```
 
 """ DataFrameMacros
