@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Tutorial · DataFrameMacros.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">DataFrameMacros.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">DataFrameMacros.jl</a></li><li><a class="tocitem" href="../documentation/">Documentation</a></li><li class="is-active"><a class="tocitem" href>Tutorial</a><ul class="internal"><li><a class="tocitem" href="#Loading-the-data"><span>Loading the data</span></a></li><li><a class="tocitem" href="#@select"><span>@select</span></a></li><li><a class="tocitem" href="#@transform"><span>@transform</span></a></li><li><a class="tocitem" href="#The-@m-passmissing-flag-macro"><span>The @m <code>passmissing</code> flag macro</span></a></li><li><a class="tocitem" href="#@subset"><span>@subset</span></a></li><li><a class="tocitem" href="#@groupby"><span>@groupby</span></a></li><li><a class="tocitem" href="#begin-...-end-syntax"><span><code>begin ... end</code> syntax</span></a></li><li><a class="tocitem" href="#@combine"><span>@combine</span></a></li><li><a class="tocitem" href="#@chain"><span>@chain</span></a></li><li><a class="tocitem" href="#The-@c-flag-macro"><span>The @c flag macro</span></a></li><li><a class="tocitem" href="#The-@t-flag-macro"><span>The @t flag macro</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Tutorial</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Tutorial</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/jkrumbiegel/DataFrameMacros.jl/blob/master/docs/src/tutorial.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Tutorial"><a class="docs-heading-anchor" href="#Tutorial">Tutorial</a><a id="Tutorial-1"></a><a class="docs-heading-anchor-permalink" href="#Tutorial" title="Permalink"></a></h1><p>In this tutorial, we&#39;ll get to know the macros of DataFrameMacros while working with the well-known <a href="https://www.kaggle.com/c/titanic/">Titanic dataset from Kaggle</a>.</p><h2 id="Loading-the-data"><a class="docs-heading-anchor" href="#Loading-the-data">Loading the data</a><a id="Loading-the-data-1"></a><a class="docs-heading-anchor-permalink" href="#Loading-the-data" title="Permalink"></a></h2><p>The <code>titanic</code> function returns the <code>DataFrame</code> with data about passengers of the Titanic.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros, DataFrames, Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrameMacros.titanic()</code><code class="nohighlight hljs ansi" style="display:block;">891×12 DataFrame
+ Row │ PassengerId  Survived  Pclass  Name                               Sex     Age        SibSp  Parch  Ticket            Fare     Cabin    Embarked
+     │ Int64        Int64     Int64   String                             String  Float64?   Int64  Int64  String            Float64  String?  String?
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │           1         0       3  Braund, Mr. Owen Harris            male         22.0      1      0  A/5 21171          7.25    missing  S
+   2 │           2         1       1  Cumings, Mrs. John Bradley (Flor…  female       38.0      1      0  PC 17599          71.2833  C85      C
+   3 │           3         1       3  Heikkinen, Miss. Laina             female       26.0      0      0  STON/O2. 3101282   7.925   missing  S
+   4 │           4         1       1  Futrelle, Mrs. Jacques Heath (Li…  female       35.0      1      0  113803            53.1     C123     S
+  ⋮  │      ⋮          ⋮        ⋮                     ⋮                    ⋮         ⋮        ⋮      ⋮           ⋮             ⋮        ⋮        ⋮
+ 889 │         889         0       3  Johnston, Miss. Catherine Helen …  female  missing        1      2  W./C. 6607        23.45    missing  S
+ 890 │         890         1       1  Behr, Mr. Karl Howell              male         26.0      0      0  111369            30.0     C148     C
+ 891 │         891         0       3  Dooley, Mr. Patrick                male         32.0      0      0  370376             7.75    missing  Q
+                                                                                                                                       884 rows omitted</code></pre><h2 id="@select"><a class="docs-heading-anchor" href="#@select">@select</a><a id="@select-1"></a><a class="docs-heading-anchor-permalink" href="#@select" title="Permalink"></a></h2><p>The simplest operation one can do is to select columns from a DataFrame. DataFrames.jl has the <code>select</code> function for that purpose and DataFramesMacro has the corresponding <code>@select</code> macro. We can pass symbols or strings with column names that we&#39;re interested in.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :Name, :Age, :Survived)</code><code class="nohighlight hljs ansi" style="display:block;">891×3 DataFrame
+ Row │ Name                               Age        Survived
+     │ String                             Float64?   Int64
+─────┼────────────────────────────────────────────────────────
+   1 │ Braund, Mr. Owen Harris                 22.0         0
+   2 │ Cumings, Mrs. John Bradley (Flor…       38.0         1
+   3 │ Heikkinen, Miss. Laina                  26.0         1
+   4 │ Futrelle, Mrs. Jacques Heath (Li…       35.0         1
+  ⋮  │                 ⋮                      ⋮         ⋮
+ 889 │ Johnston, Miss. Catherine Helen …  missing           0
+ 890 │ Behr, Mr. Karl Howell                   26.0         1
+ 891 │ Dooley, Mr. Patrick                     32.0         0
+                                              884 rows omitted</code></pre><p>We can also compute new columns with <code>@select</code>. We can either specify a new column ourselves, or DataFrames selects an automatic name.</p><p>For example, we can extract the last name from each name string by splitting at the comma.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :last_name = split(:Name, &quot;,&quot;)[1])</code><code class="nohighlight hljs ansi" style="display:block;">891×1 DataFrame
+ Row │ last_name
+     │ SubStrin…
+─────┼───────────
+   1 │ Braund
+   2 │ Cumings
+   3 │ Heikkinen
+   4 │ Futrelle
+  ⋮  │     ⋮
+ 889 │ Johnston
+ 890 │ Behr
+ 891 │ Dooley
+ 884 rows omitted</code></pre><p>The <code>split</code> function operates on a single string, so for this expression to work on the whole column <code>:Name</code>, there must be an implicit broadcast expansion happening. In DataFrameMacros, every macro but <code>@combine</code> works <strong>by-row</strong> by default. The expression that the <code>@select</code> macro creates is equivalent to the following <code>ByRow</code> construct:</p><pre><code class="language-julia hljs">select(df, :Name =&gt; ByRow(x -&gt; split(x, &quot;,&quot;)[1]) =&gt; :last_name)</code></pre><h2 id="@transform"><a class="docs-heading-anchor" href="#@transform">@transform</a><a id="@transform-1"></a><a class="docs-heading-anchor-permalink" href="#@transform" title="Permalink"></a></h2><p>Another thing we can try is to categorize every passenger into child or adult at the boundary of 18 years.</p><p>Let&#39;s use the <code>@transform</code> macro this time, which appends new columns to an existing DataFrame.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, :type = :Age &gt;= 18 ? &quot;adult&quot; : &quot;child&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: TypeError: non-boolean (Missing) used in boolean context</code></pre><p>This command fails because some passengers have no age recorded, and the ternary operator <code>... ? ... : ...</code> (a shortcut for <code>if ... then ... else ...</code>) cannot operate on <code>missing</code> values.</p><h2 id="The-@m-passmissing-flag-macro"><a class="docs-heading-anchor" href="#The-@m-passmissing-flag-macro">The @m <code>passmissing</code> flag macro</a><a id="The-@m-passmissing-flag-macro-1"></a><a class="docs-heading-anchor-permalink" href="#The-@m-passmissing-flag-macro" title="Permalink"></a></h2><p>One option is to remove the missing values beforehand, but then we would have to delete rows from the dataset. A simple option to make the expression pass through missing values, is by using the special flag macro <code>@m</code>.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, :type = @m :Age &gt;= 18 ? &quot;adult&quot; : &quot;child&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">891×13 DataFrame
+ Row │ PassengerId  Survived  Pclass  Name                               Sex     Age        SibSp  Parch  Ticket            Fare     Cabin    Embarked  type
+     │ Int64        Int64     Int64   String                             String  Float64?   Int64  Int64  String            Float64  String?  String?   String?
+─────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │           1         0       3  Braund, Mr. Owen Harris            male         22.0      1      0  A/5 21171          7.25    missing  S         adult
+   2 │           2         1       1  Cumings, Mrs. John Bradley (Flor…  female       38.0      1      0  PC 17599          71.2833  C85      C         adult
+   3 │           3         1       3  Heikkinen, Miss. Laina             female       26.0      0      0  STON/O2. 3101282   7.925   missing  S         adult
+   4 │           4         1       1  Futrelle, Mrs. Jacques Heath (Li…  female       35.0      1      0  113803            53.1     C123     S         adult
+  ⋮  │      ⋮          ⋮        ⋮                     ⋮                    ⋮         ⋮        ⋮      ⋮           ⋮             ⋮        ⋮        ⋮         ⋮
+ 889 │         889         0       3  Johnston, Miss. Catherine Helen …  female  missing        1      2  W./C. 6607        23.45    missing  S         missing
+ 890 │         890         1       1  Behr, Mr. Karl Howell              male         26.0      0      0  111369            30.0     C148     C         adult
+ 891 │         891         0       3  Dooley, Mr. Patrick                male         32.0      0      0  370376             7.75    missing  Q         adult
+                                                                                                                                                884 rows omitted</code></pre><p>This is equivalent to a DataFrames construct, in which the function is wrapped in <code>passmissing</code>:</p><pre><code class="language-julia hljs">transform(df, :Age =&gt; ByRow(passmissing(x -&gt; x &gt;= 18 ? &quot;adult&quot; : &quot;child&quot;)) =&gt; :type)</code></pre><p>This way, if any input argument is <code>missing</code>, the function returns <code>missing</code>, too.</p><h2 id="@subset"><a class="docs-heading-anchor" href="#@subset">@subset</a><a id="@subset-1"></a><a class="docs-heading-anchor-permalink" href="#@subset" title="Permalink"></a></h2><p>To retain only rows that fulfill certain conditions, you can use the <code>@subset</code> macro. For this macro it does not make sense to specify sink column names, because derived columns do not appear in the result. If there are <code>missing</code> values, you can use the <code>@m</code> flag to pass them through the boolean condition, and add the keyword argument <code>skipmissing = true</code> which the underlying <code>subset</code> function requires to remove such rows.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @subset(df, @m startswith(:Name, &quot;M&quot;) &amp;&amp; :Age &gt; 50; skipmissing = true)</code><code class="nohighlight hljs ansi" style="display:block;">7×12 DataFrame
+ Row │ PassengerId  Survived  Pclass  Name                         Sex     Age       SibSp  Parch  Ticket       Fare     Cabin    Embarked
+     │ Int64        Int64     Int64   String                       String  Float64?  Int64  Int64  String       Float64  String?  String?
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │           7         0       1  McCarthy, Mr. Timothy J      male        54.0      0      0  17463        51.8625  E46      S
+   2 │         153         0       3  Meo, Mr. Alfonzo             male        55.5      0      0  A.5. 11206    8.05    missing  S
+   3 │         318         0       2  Moraweck, Dr. Ernest         male        54.0      0      0  29011        14.0     missing  S
+   4 │         457         0       1  Millet, Mr. Francis Davis    male        65.0      0      0  13509        26.55    E38      S
+   5 │         493         0       1  Molson, Mr. Harry Markland   male        55.0      0      0  113787       30.5     C30      S
+   6 │         673         0       2  Mitchell, Mr. Henry Michael  male        70.0      0      0  C.A. 24580   10.5     missing  S
+   7 │         773         0       2  Mack, Mrs. (Mary)            female      57.0      0      0  S.O./P.P. 3  10.5     E77      S</code></pre><h2 id="@groupby"><a class="docs-heading-anchor" href="#@groupby">@groupby</a><a id="@groupby-1"></a><a class="docs-heading-anchor-permalink" href="#@groupby" title="Permalink"></a></h2><p>The <code>groupby</code> function in DataFrames does not use the <code>src =&gt; function =&gt; sink</code> mini-language, it requires you to create any columns you want to group by beforehand. In DataFrameMacros, the <code>@groupby</code> macro works like a <code>transform</code> and <code>groupby</code> combination, so that you can create columns and group by them in one stroke.</p><p>For example, we could group the passengers based on if their last name begins with a letter from the first or the second half of the alphabet.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @groupby(df, :alphabet_half = :Name[1] &lt;= &#39;M&#39; ? &quot;first&quot; : &quot;second&quot;)</code><code class="nohighlight hljs ansi" style="display:block;">GroupedDataFrame with 2 groups based on key: alphabet_half
+First Group (570 rows): alphabet_half = &quot;first&quot;
+ Row │ PassengerId  Survived  Pclass  Name                               Sex     Age        SibSp  Parch  Ticket            Fare     Cabin    Embarked  alphabet_half
+     │ Int64        Int64     Int64   String                             String  Float64?   Int64  Int64  String            Float64  String?  String?   String
+─────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │           1         0       3  Braund, Mr. Owen Harris            male         22.0      1      0  A/5 21171          7.25    missing  S         first
+   2 │           2         1       1  Cumings, Mrs. John Bradley (Flor…  female       38.0      1      0  PC 17599          71.2833  C85      C         first
+   3 │           3         1       3  Heikkinen, Miss. Laina             female       26.0      0      0  STON/O2. 3101282   7.925   missing  S         first
+   4 │           4         1       1  Futrelle, Mrs. Jacques Heath (Li…  female       35.0      1      0  113803            53.1     C123     S         first
+  ⋮  │      ⋮          ⋮        ⋮                     ⋮                    ⋮         ⋮        ⋮      ⋮           ⋮             ⋮        ⋮        ⋮            ⋮
+ 567 │         888         1       1  Graham, Miss. Margaret Edith       female       19.0      0      0  112053            30.0     B42      S         first
+ 568 │         889         0       3  Johnston, Miss. Catherine Helen …  female  missing        1      2  W./C. 6607        23.45    missing  S         first
+ 569 │         890         1       1  Behr, Mr. Karl Howell              male         26.0      0      0  111369            30.0     C148     C         first
+ 570 │         891         0       3  Dooley, Mr. Patrick                male         32.0      0      0  370376             7.75    missing  Q         first
+                                                                                                                                                      562 rows omitted
+⋮
+Last Group (321 rows): alphabet_half = &quot;second&quot;
+ Row │ PassengerId  Survived  Pclass  Name                               Sex     Age        SibSp  Parch  Ticket           Fare     Cabin    Embarked  alphabet_half
+     │ Int64        Int64     Int64   String                             String  Float64?   Int64  Int64  String           Float64  String?  String?   String
+─────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │           8         0       3  Palsson, Master. Gosta Leonard     male          2.0      3      1  349909           21.075   missing  S         second
+   2 │          10         1       2  Nasser, Mrs. Nicholas (Adele Ach…  female       14.0      1      0  237736           30.0708  missing  C         second
+   3 │          11         1       3  Sandstrom, Miss. Marguerite Rut    female        4.0      1      1  PP 9549          16.7     G6       S         second
+   4 │          13         0       3  Saundercock, Mr. William Henry     male         20.0      0      0  A/5. 2151         8.05    missing  S         second
+  ⋮  │      ⋮          ⋮        ⋮                     ⋮                    ⋮         ⋮        ⋮      ⋮           ⋮            ⋮        ⋮        ⋮            ⋮
+ 318 │         880         1       1  Potter, Mrs. Thomas Jr (Lily Ale…  female       56.0      0      1  11767            83.1583  C50      C         second
+ 319 │         881         1       2  Shelley, Mrs. William (Imanita P…  female       25.0      0      1  230433           26.0     missing  S         second
+ 320 │         885         0       3  Sutehall, Mr. Henry Jr             male         25.0      0      0  SOTON/OQ 392076   7.05    missing  S         second
+ 321 │         886         0       3  Rice, Mrs. William (Margaret Nor…  female       39.0      0      5  382652           29.125   missing  Q         second
+                                                                                                                                                     313 rows omitted</code></pre><h2 id="begin-...-end-syntax"><a class="docs-heading-anchor" href="#begin-...-end-syntax"><code>begin ... end</code> syntax</a><a id="begin-...-end-syntax-1"></a><a class="docs-heading-anchor-permalink" href="#begin-...-end-syntax" title="Permalink"></a></h2><p>You can of course group by multiple columns, in that case just add more positional arguments. In order to write more readable code, we can arrange our multiple arguments as lines in a <code>begin ... end</code> block instead of two comma-separated positional arguments.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; group = @groupby df begin
+           :alphabet_half = :Name[1] &lt;= &#39;M&#39; ? &quot;first&quot; : &quot;second&quot;
+           :Sex
+       end</code><code class="nohighlight hljs ansi" style="display:block;">GroupedDataFrame with 4 groups based on keys: alphabet_half, Sex
+First Group (368 rows): alphabet_half = &quot;first&quot;, Sex = &quot;male&quot;
+ Row │ PassengerId  Survived  Pclass  Name                           Sex     Age        SibSp  Parch  Ticket            Fare     Cabin    Embarked  alphabet_half
+     │ Int64        Int64     Int64   String                         String  Float64?   Int64  Int64  String            Float64  String?  String?   String
+─────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │           1         0       3  Braund, Mr. Owen Harris        male         22.0      1      0  A/5 21171          7.25    missing  S         first
+   2 │           5         0       3  Allen, Mr. William Henry       male         35.0      0      0  373450             8.05    missing  S         first
+   3 │           6         0       3  Moran, Mr. James               male    missing        0      0  330877             8.4583  missing  Q         first
+   4 │           7         0       1  McCarthy, Mr. Timothy J        male         54.0      0      0  17463             51.8625  E46      S         first
+  ⋮  │      ⋮          ⋮        ⋮                   ⋮                  ⋮         ⋮        ⋮      ⋮           ⋮             ⋮        ⋮        ⋮            ⋮
+ 365 │         884         0       2  Banfield, Mr. Frederick James  male         28.0      0      0  C.A./SOTON 34068  10.5     missing  S         first
+ 366 │         887         0       2  Montvila, Rev. Juozas          male         27.0      0      0  211536            13.0     missing  S         first
+ 367 │         890         1       1  Behr, Mr. Karl Howell          male         26.0      0      0  111369            30.0     C148     C         first
+ 368 │         891         0       3  Dooley, Mr. Patrick            male         32.0      0      0  370376             7.75    missing  Q         first
+                                                                                                                                                  360 rows omitted
+⋮
+Last Group (112 rows): alphabet_half = &quot;second&quot;, Sex = &quot;female&quot;
+ Row │ PassengerId  Survived  Pclass  Name                               Sex     Age        SibSp  Parch  Ticket    Fare      Cabin    Embarked  alphabet_half
+     │ Int64        Int64     Int64   String                             String  Float64?   Int64  Int64  String    Float64   String?  String?   String
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │          10         1       2  Nasser, Mrs. Nicholas (Adele Ach…  female       14.0      1      0  237736     30.0708  missing  C         second
+   2 │          11         1       3  Sandstrom, Miss. Marguerite Rut    female        4.0      1      1  PP 9549    16.7     G6       S         second
+   3 │          15         0       3  Vestrom, Miss. Hulda Amanda Adol…  female       14.0      0      0  350406      7.8542  missing  S         second
+   4 │          19         0       3  Vander Planke, Mrs. Julius (Emel…  female       31.0      1      0  345763     18.0     missing  S         second
+  ⋮  │      ⋮          ⋮        ⋮                     ⋮                    ⋮         ⋮        ⋮      ⋮       ⋮         ⋮         ⋮        ⋮            ⋮
+ 109 │         876         1       3  Najib, Miss. Adele Kiamie &quot;Jane&quot;   female       15.0      0      0  2667        7.225   missing  C         second
+ 110 │         880         1       1  Potter, Mrs. Thomas Jr (Lily Ale…  female       56.0      0      1  11767      83.1583  C50      C         second
+ 111 │         881         1       2  Shelley, Mrs. William (Imanita P…  female       25.0      0      1  230433     26.0     missing  S         second
+ 112 │         886         0       3  Rice, Mrs. William (Margaret Nor…  female       39.0      0      5  382652     29.125   missing  Q         second
+                                                                                                                                               104 rows omitted</code></pre><h2 id="@combine"><a class="docs-heading-anchor" href="#@combine">@combine</a><a id="@combine-1"></a><a class="docs-heading-anchor-permalink" href="#@combine" title="Permalink"></a></h2><p>We can compute summary statistics on groups using the <code>@combine</code> macro. This is the only macro that works <strong>by-column</strong> by default because aggregations are most commonly computed on full columns, not on each row.</p><p>For example, we can compute survival rates for the groups we created above.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @combine(group, :survival_rate = mean(:Survived))</code><code class="nohighlight hljs ansi" style="display:block;">4×3 DataFrame
+ Row │ alphabet_half  Sex     survival_rate
+     │ String         String  Float64
+─────┼──────────────────────────────────────
+   1 │ first          male         0.214674
+   2 │ first          female       0.752475
+   3 │ second         male         0.143541
+   4 │ second         female       0.723214</code></pre><h2 id="@chain"><a class="docs-heading-anchor" href="#@chain">@chain</a><a id="@chain-1"></a><a class="docs-heading-anchor-permalink" href="#@chain" title="Permalink"></a></h2><p>The <code>@chain</code> macro from <a href="https://github.com/jkrumbiegel/Chain.jl">Chain.jl</a> is useful to build sequences of operations. It is not included in DataFrameMacros but works well with it.</p><p>In a chain, the first argument of each function or macro call is by default the result from the previous line.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Chain</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @chain df begin
+           @select(:Sex, :Age, :Survived)
+           dropmissing(:Age)
+           @groupby(:Sex, :age_range =
+               floor(Int, :Age/10) * 10 : ceil(Int, :Age/10) * 10 - 1)
+           @combine(:survival_rate = mean(:Survived))
+           @sort(first(:age_range), :Sex)
+       end</code><code class="nohighlight hljs ansi" style="display:block;">17×3 DataFrame
+ Row │ Sex     age_range  survival_rate
+     │ String  UnitRang…  Float64
+─────┼──────────────────────────────────
+   1 │ female  0:9            0.633333
+   2 │ male    0:9            0.59375
+   3 │ female  10:19          0.772727
+   4 │ male    10:19          0.125
+  ⋮  │   ⋮         ⋮            ⋮
+  15 │ female  60:69          1.0
+  16 │ male    60:69          0.0833333
+  17 │ male    70:79          0.0
+                         10 rows omitted</code></pre><p>Here you could also see the <code>@sort</code> macro, which is useful when you want to sort by values that are derived from different columns, but which you don&#39;t want to include in the DataFrame.</p><h2 id="The-@c-flag-macro"><a class="docs-heading-anchor" href="#The-@c-flag-macro">The @c flag macro</a><a id="The-@c-flag-macro-1"></a><a class="docs-heading-anchor-permalink" href="#The-@c-flag-macro" title="Permalink"></a></h2><p>Some <code>@transform</code> or <code>@select</code> calls require access to whole columns at once. One scenario is computing a z-score. Because <code>@transform</code> and <code>@select</code> work <strong>by-row</strong> by default, you need to add the <code>@c</code> flag macro to signal that you want to work <strong>by-column</strong>. This is exactly the opposite from DataFrames, where you work <strong>by-column</strong> by default and signal by-row behavior with the <code>ByRow</code> wrapper.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(
+           dropmissing(df, :Age),
+           :age_z = @c (:Age .- mean(:Age)) ./ std(:Age))</code><code class="nohighlight hljs ansi" style="display:block;">714×1 DataFrame
+ Row │ age_z
+     │ Float64
+─────┼───────────
+   1 │ -0.530005
+   2 │  0.57143
+   3 │ -0.254646
+   4 │  0.364911
+  ⋮  │     ⋮
+ 712 │ -0.736524
+ 713 │ -0.254646
+ 714 │  0.158392
+ 707 rows omitted</code></pre><h2 id="The-@t-flag-macro"><a class="docs-heading-anchor" href="#The-@t-flag-macro">The @t flag macro</a><a id="The-@t-flag-macro-1"></a><a class="docs-heading-anchor-permalink" href="#The-@t-flag-macro" title="Permalink"></a></h2><p>If a computation should return multiple different columns, DataFrames allows you to do this by returning a <code>NamedTuple</code> and setting the sink argument to <code>AsTable</code>. To streamline this process you can use the <code>@t</code> flag macro. It signals that all <code>:symbol = expression</code> expressions that are found are rewritten so that a <code>NamedTuple</code> like <code>(symbol = expression, symbol2...)</code> is returned and the sink argument is set to <code>AsTable</code>.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, @t begin
+           nameparts = split(:Name, r&quot;[\s,]+&quot;)
+           :title = nameparts[2]
+           :first_name = nameparts[3]
+           :last_name = nameparts[1]
+       end)</code><code class="nohighlight hljs ansi" style="display:block;">891×3 DataFrame
+ Row │ title      first_name  last_name
+     │ SubStrin…  SubStrin…   SubStrin…
+─────┼──────────────────────────────────
+   1 │ Mr.        Owen        Braund
+   2 │ Mrs.       John        Cumings
+   3 │ Miss.      Laina       Heikkinen
+   4 │ Mrs.       Jacques     Futrelle
+  ⋮  │     ⋮          ⋮           ⋮
+ 889 │ Miss.      Catherine   Johnston
+ 890 │ Mr.        Karl        Behr
+ 891 │ Mr.        Patrick     Dooley
+                        884 rows omitted</code></pre><p>You can also use tuple destructuring syntax with the <code>@t</code> macro. This can often make assignments of multiple columns even more terse:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, @t begin
+           :last_name, :title, :first_name, rest... = split(:Name, r&quot;[\s,]+&quot;)
+       end)</code><code class="nohighlight hljs ansi" style="display:block;">891×3 DataFrame
+ Row │ last_name  title      first_name
+     │ SubStrin…  SubStrin…  SubStrin…
+─────┼──────────────────────────────────
+   1 │ Braund     Mr.        Owen
+   2 │ Cumings    Mrs.       John
+   3 │ Heikkinen  Miss.      Laina
+   4 │ Futrelle   Mrs.       Jacques
+  ⋮  │     ⋮          ⋮          ⋮
+ 889 │ Johnston   Miss.      Catherine
+ 890 │ Behr       Mr.        Karl
+ 891 │ Dooley     Mr.        Patrick
+                        884 rows omitted</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../documentation/">« Documentation</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.6 on <span class="colophon-date" title="Friday 17 September 2021 09:45">Friday 17 September 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
