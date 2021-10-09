@@ -1,7 +1,7 @@
 module DataFrameMacros
 
 using Base: ident_cmp
-using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame
+using DataFrames: DataFrames, transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 
@@ -129,14 +129,17 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         if target !== nothing
             error("There should be no target expression when the @t flag is used. The implicit target is `AsTable`. Target received was $target")
         end
-        target = :(AsTable)
+        target_expr = :(DataFrames.AsTable)
         formula = convert_automatic_astable_formula(formula)
+    else
+        target_expr = make_target_expression(df, target)
     end
 
     columns = gather_columns(formula)
     func, columns = make_function_expr(formula, columns)
     clean_columns = map(c -> clean_column(c, df), columns)
-
+    stringified_columns = [esc(:(DataFrameMacros.stringargs($c, $df))) for c in clean_columns]
+    
     byrow = (defaultbyrow(f) && !('c' in flags)) ||
         (!defaultbyrow(f) && ('r' in flags))
 
@@ -148,12 +151,39 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
 
     func = byrow ? :(ByRow($func)) : :($func)
 
-    trans_expr = if target === nothing
-        :([$(clean_columns...)] => $(esc(func)))
+    trans_expr = if target_expr === nothing
+        :(vcat.($(stringified_columns...)) .=> $(esc(func)))
     else
-        :([$(clean_columns...)] => $(esc(func)) => $(esc(target)))
+        :(vcat.($(stringified_columns...)) .=> $(esc(func)) .=> $(esc(target_expr)))
     end
 end
+
+function make_target_expression(df, expr)
+    # not really columns but resolved names
+    columns = gather_columns(expr)
+    clean_columns = map(c -> clean_column(c, df), columns)
+
+    replaced_expr = postwalk(expr) do e
+        # check first if this is an escaped symbol
+        # and if yes return it unwrapped
+        if is_escaped_symbol(e)
+            return e.args[1]
+        end
+
+        # check if this expression matches one of the column expressions
+        # and wrap it in names(df, ex) if it matches
+        i = findfirst(c -> c == e, columns)
+        if i === nothing
+            e
+        else
+            c = clean_columns[i]
+            :(DataFrameMacros.stringargs($c, $df))
+        end
+    end
+
+    replaced_expr
+end
+
 
 function split_formula(e::Expr)
     if e.head != :(=)
@@ -248,24 +278,24 @@ function make_function_expr(formula, columns)
     expr, columns
 end
 
-clean_column(x::QuoteNode, df) = x
-clean_column(x, df) = :(symbolarg($x, $df))
+clean_column(x::QuoteNode, df) = string(x.value)
+clean_column(x, df) = :(stringargs($x, $df))
 function clean_column(e::Expr, df)
-    e = if e.head == :$
+    stripped_e = if e.head == :$
         e.args[1]
     else
         e
     end
-    if e isa String
-        QuoteNode(Symbol(e))
-    else
-        :(symbolarg($(esc(e)), $(esc(df))))
-    end
+    # if stripped_e isa String
+    #     QuoteNode(Symbol(stripped_e))
+    # else
+    #     :(stringargs($(esc(stripped_e)), $(esc(df))))
+    # end
 end
 
-symbolarg(x::Int, df) = Symbol(names(df)[x])
-symbolarg(sym::Symbol, df) = sym
-symbolarg(s::String, df) = Symbol(s)
+stringargs(x, df) = names(df, x)
+stringargs(sym::Symbol, df) = string(sym)
+stringargs(s::String, df) = s
 
 is_escaped_symbol(e::Expr) = e.head == :$ && length(e.args) == 1 && e.args[1] isa QuoteNode
 is_escaped_symbol(x) = false
