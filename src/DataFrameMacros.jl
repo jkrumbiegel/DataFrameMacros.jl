@@ -294,6 +294,13 @@ function clean_column(e::Expr, df)
 end
 
 stringargs(x, df) = names(df, x)
+stringargs(a::AbstractVector, df) = names(df, a)
+# this is needed because from matrix up `names` fails
+function stringargs(a::AbstractArray, df)
+    s = size(a)
+    reshape(names(df, vec(a)), s)
+end
+
 stringargs(sym::Symbol, df) = string(sym)
 stringargs(s::String, df) = s
 
