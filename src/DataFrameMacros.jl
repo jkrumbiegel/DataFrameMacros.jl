@@ -135,6 +135,8 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         target_expr = make_target_expression(df, target)
     end
 
+    formula_is_column = is_column_expr(formula)
+
     columns = gather_columns(formula)
     func, columns = make_function_expr(formula, columns)
     clean_columns = map(c -> clean_column(c, df), columns)
@@ -152,9 +154,17 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
     func = byrow ? :(ByRow($func)) : :($func)
 
     trans_expr = if target_expr === nothing
-        :(vcat.($(stringified_columns...)) .=> $(esc(func)))
+        if formula_is_column
+            :($(stringified_columns...) .=> $(stringified_columns...))
+        else
+            :(vcat.($(stringified_columns...)) .=> $(esc(func)))
+        end
     else
-        :(vcat.($(stringified_columns...)) .=> $(esc(func)) .=> $(esc(target_expr)))
+        if formula_is_column
+            :($(stringified_columns...) .=> $(esc(target_expr)))
+        else
+            :(vcat.($(stringified_columns...)) .=> $(esc(func)) .=> $(esc(target_expr)))
+        end
     end
 end
 
