@@ -195,7 +195,7 @@ Here's a simple selection of columns without transformation:
 Or another example with a `Function` that selects all columns ending with "e":
 
 ```@repl 1
-@select(df, $(endswith("e"))
+@select(df, $(endswith("e")))
 ```
 
 The next step is to actually compute with the selected columns.
