@@ -223,3 +223,29 @@ select(df, DataFrameMacros.stringargs(df, Real) .=> ByRow(Float32) .=> lowercase
 
 The `stringargs` function handles the conversion from input object to column names and is almost equivalent to using `DataFrames.names`, except that `Symbols`, `Strings`, and collections thereof are passed through as-is.
 
+We can see the broadcasting aspect better by combining column specifiers of different length in one expression.
+Let's pretend for example, that we wanted to have columns that compute interactions of multiple numeric variables, such as age with survival status or passenger class:
+
+```@repl 1
+@select(df, :Age * $[:Survived, :Pclass])
+```
+
+As you can see, the :Age column was multiplied element-wise with each of the other two columns.
+
+This process works also with n-dimensional arrays, for example to multiply multiple columns in all possible combinations, we can use one row and one column vector:
+
+```@repl 1
+@select(df, $[:Survived, :Pclass] * $(permutedims([:Survived, :Pclass])))
+```
+
+The sink specifier can be an n-dimensional array as well, which is finally flattened into a sequence of columns going column-first.
+
+```@repl 1
+@select(df, ["a" "c"; "b" "d"] = $[:Survived, :Pclass] * $(permutedims([:Survived, :Pclass])))
+```
+
+The left-hand side doesn't necessarily have to match the size of the right-hand side expression (remember we're broadcasting) but of course you just copy columns multiple times if you have more names than source columns.
+
+```@repl 1
+@select(df, ["a", "b", "c"] = :Survived)
+```
