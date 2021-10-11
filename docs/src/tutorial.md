@@ -172,3 +172,54 @@ This can often make assignments of multiple columns even more terse:
     :last_name, :title, :first_name, rest... = split(:Name, r"[\s,]+")
 end)
 ```
+
+## Multi-column specifications
+
+So far we have only accessed a single column with each column specifier, like `:Survived`.
+But often, transformations are supposed to be applied over a set of columns.
+
+In DataFrameMacros, the `source-function-sink` pair construct being created is automatically broadcasted over all column specifiers.
+This means one can not only use any expression marked by `$` which results in a single column identifier, but also in multi column identifiers.
+The broadcasting is "invisible" to the user when they only limit their use to single-column identifiers, as broadcasting over singular objects results in a singular source-function-sink expression.
+
+Possible identifiers are n-dimensional arrays of strings, symbols or integers and all valid inputs to the `DataFrames.names(df, specifier)` function.
+Examples of these are `All()`, `Not(:x)`, `Between(:x, :z)`, any `Type`, or any `Function` that returns `true` or `false` given a column name `String`.
+
+Let's look at a few basic examples.
+Here's a simple selection of columns without transformation:
+
+```@repl 1
+@select(df, $(Between(:Name, :Age)))
+```
+
+Or another example with a `Function` that selects all columns ending with "e":
+
+```@repl 1
+@select(df, $(endswith("e"))
+```
+
+The next step is to actually compute with the selected columns.
+The resulting DataFrames mini-language construct is `sources .=> function[s] .=> sinks` where in the default case, there is just a single function, even when using multiple columns.
+
+For example, we can select all columns that are subtypes of `Real` and convert them to `Float32`:
+
+```@repl 1
+@select(df, Float32($Real))
+```
+
+On the left-hand side of `left_expression = right_expression`, we can also create a multi-column-specifier object in order to choose a collection of column names for the result of `right_expression`.
+We can splice collections of existing names in with `$` which makes it easy to create new names based on old ones.
+For example, to continue with the `Float32` example, we could `lowercase` each column name and append a `_32` suffix instead of relying on the automatic renaming.
+
+```@repl 1
+@select(df, lowercase.($Real) .* "_32" = Float32($Real))
+```
+
+Just to reiterate, this expression amounts to something close to:
+
+```julia
+select(df, DataFrameMacros.stringargs(df, Real) .=> ByRow(Float32) .=> lowercase.(DataFrameMacros.stringargs(df, Real) .* "_32"))
+```
+
+The `stringargs` function handles the conversion from input object to column names and is almost equivalent to using `DataFrames.names`, except that `Symbols`, `Strings`, and collections thereof are passed through as-is.
+

@@ -397,19 +397,20 @@ All macros have signatures of the form:
 @macro(df, args...; kwargs...)
 ```
 
-Each positional argument in `args` is converted to a `source => function => sink` expression for the transformation mini-language of DataFrames.
+Each positional argument in `args` is converted to a `source .=> function .=> sink` expression for the transformation mini-language of DataFrames.
 By default, all macros execute the given function **by-row**, only `@combine` executes **by-column**.
+There is automatic broadcasting across all column specifiers, so it is possible to directly use multi-column specifiers such as `All()`, `Not(:x)`, `r"columnname"` and `startswith("prefix")`.
 
 For example, the following pairs of expressions are equivalent:
 
 ```julia
-transform(df, :x => ByRow(x -> x + 1) => :y)
+transform(df, :x .=> ByRow(x -> x + 1) .=> :y)
 @transform(df, :y = :x + 1)
 
-sort(df, :x => ByRow(x -> x ^ 2))
-@sort(df, :x ^ 2)
+select(df, names(df, All()) .=> ByRow(x -> x ^ 2))
+@select(df, \$(All()) ^ 2)
 
-combine(df, :x => (x -> sum(x) / 5) => :result)
+combine(df, :x .=> (x -> sum(x) / 5) .=> :result)
 @combine(df, :result = sum(:x) / 5)
 ```
 

@@ -218,3 +218,20 @@ end
     end)
     @test df5 == df2 == df4
 end
+
+
+@testset "multiple columns" begin
+    df = DataFrame(a = 1:3, aa = 4:6, b = 7:9)
+    df2 = @select(df, $(All()) = Float32($(All())))
+    @test df2 == select(df, names(df, All()) .=> ByRow(Float32) .=> names(df, All()))
+
+    @test @select(df, $(r"a")) == select(df, names(df, r"a"))
+    df3 = @transform(df, ["x", "y"] = $(r"a") + 1)
+    @test df3 == transform(df, names(df, r"a") .=> ByRow(x -> x + 1) .=> ["x", "y"])
+
+    df4 = @select(df, $(1:3) + $((1:3)'))
+    @test df4 == select(df, vcat.(1:3, (1:3)') .=> +)
+
+    df5 = @select(df, :a + $(1:3))
+    @test df5 == select(df, vcat.("a", names(df, 1:3)) .=> +)
+end
