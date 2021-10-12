@@ -140,7 +140,7 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
     columns = gather_columns(formula)
     func, columns = make_function_expr(formula, columns)
     clean_columns = map(c -> clean_column(c, df), columns)
-    stringified_columns = [esc(:(DataFrameMacros.stringargs($c, $df))) for c in clean_columns]
+    stringified_columns = [esc(stringarg_expr(c, df)) for c in clean_columns]
     
     byrow = (defaultbyrow(f) && !('c' in flags)) ||
         (!defaultbyrow(f) && ('r' in flags))
@@ -187,7 +187,7 @@ function make_target_expression(df, expr)
             e
         else
             c = clean_columns[i]
-            :(DataFrameMacros.stringargs($c, $df))
+            stringarg_expr(c, df)
         end
     end
 
@@ -288,19 +288,18 @@ function make_function_expr(formula, columns)
     expr, columns
 end
 
+stringarg_expr(x, df) = :(DataFrameMacros.stringargs($x, $df))
+stringarg_expr(x::String, df) = x
+
 clean_column(x::QuoteNode, df) = string(x.value)
-clean_column(x, df) = :(stringargs($x, $df))
+clean_column(x, df) = :(DataFrameMacros.stringargs($x, $df))
+clean_column(x::String, df) = x
 function clean_column(e::Expr, df)
     stripped_e = if e.head == :$
         e.args[1]
     else
         e
     end
-    # if stripped_e isa String
-    #     QuoteNode(Symbol(stripped_e))
-    # else
-    #     :(stringargs($(esc(stripped_e)), $(esc(df))))
-    # end
 end
 
 stringargs(x, df) = names(df, x)

@@ -23,3 +23,15 @@ using DataFrameMacros
 
 @prettyexpand @select(df, :z = :x + :y)
 ```
+
+```@example 1
+@prettyexpand @select(df, :z = @c :x .+ :y)
+```
+
+```@example 1
+@prettyexpand @select(df, :z = $1 + $2)
+```
+
+```@example 1
+@prettyexpand @select(df, :z = @m :x + :y)
+```
