@@ -8,7 +8,7 @@ using Markdown
 macro prettyexpand(exp)
     s = format_text(string(
         prettify(macroexpand(@__MODULE__, exp))
-    ))
+    ), margin = 80)
 
     Markdown.parse("""
     ```julia
