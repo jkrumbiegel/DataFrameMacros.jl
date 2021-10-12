@@ -3,14 +3,14 @@
 ```@example 1
 using JuliaFormatter: format_text
 using MacroTools: prettify
-using Markdown: MD
+using Markdown
 
 macro prettyexpand(exp)
     s = format_text(string(
         prettify(macroexpand(@__MODULE__, exp))
     ))
 
-    MD("""
+    Markdown.parse("""
     ```julia
     $s
     ```
