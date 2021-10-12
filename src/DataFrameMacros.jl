@@ -157,13 +157,13 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         if formula_is_column
             :($(stringified_columns...) .=> $(stringified_columns...))
         else
-            :(vcat.($(stringified_columns...)) .=> $(esc(func)))
+            :($(esc(vcat)).($(stringified_columns...)) .=> $(esc(func)))
         end
     else
         if formula_is_column
             :($(stringified_columns...) .=> $(esc(target_expr)))
         else
-            :(vcat.($(stringified_columns...)) .=> $(esc(func)) .=> $(esc(target_expr)))
+            :($(esc(vcat)).($(stringified_columns...)) .=> $(esc(func)) .=> $(esc(target_expr)))
         end
     end
 end
