@@ -35,3 +35,7 @@ using DataFrameMacros
 ```@example 1
 @prettyexpand @select(df, :z = @m :x + :y)
 ```
+
+```@example 1
+@prettyexpand @transform(df, @t :first_name, :last_name = split(:full_name))
+```
