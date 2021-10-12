@@ -21,5 +21,5 @@ end
 ```@example 1
 using DataFrameMacros
 
-@select(df, :z = :x + :y)
+@prettyexpand @select(df, :z = :x + :y)
 ```
