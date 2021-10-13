@@ -59,7 +59,7 @@ These are the most important aspects that differ from other packages ([DataFrame
 
 - All macros except `@combine` work **row-wise** by default. This reduces syntax complexity in most cases because no broadcasting is necessary. A flag macro (`@c` or `@r`) can be used to switch between row/column-based mode when needed.
 - `@groupby` and `@sort` allow using arbitrary expressions including multiple columns, without having to `@transform` first and repeat the new column names.
-- Column expressions are interpolated into the macro with `$`.
+- Column expressions are interpolated into the macro with `$`. All column expressions are **broadcasted implicitly** to create a collection of src-func-sink pairs. This allows to use multi-column specifiers like `All()` or `Not(:x)` where the specified transformation is executed for each column.
 - Keyword arguments to the macro-underlying functions work by separating them from column expressions with the `;` character.
 - Target column names are written with `:` symbols to avoid visual ambiguity (`:newcol = ...`). This also allows to use `AsTable` as a target like in DataFrames.jl.
 - The flag macro can also include the character `m` to switch on automatic `passmissing` in row-wise mode.
