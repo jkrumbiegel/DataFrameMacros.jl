@@ -146,7 +146,7 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         func = :(passmissing($func))
     end
 
-    func = byrow ? :(ByRow($func)) : :($func)
+    func = byrow ? :(DataFrames.ByRow($func)) : :($func)
 
     trans_expr = if target === nothing
         :([$(clean_columns...)] => $(esc(func)))
