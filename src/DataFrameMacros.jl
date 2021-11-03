@@ -19,22 +19,36 @@ for f in funcsymbols
         The transformation logic for all DataFrameMacros macros is explained in the `DataFrameMacros` module docstring, accessible via `?DataFrameMacros`.
         """
         macro $f(exprs...)
-            macrohelper($f, exprs...)
+            macrohelper($(QuoteNode(f)), exprs...)
         end
     end
 end
 
-defaultbyrow(::typeof(transform)) = true
-defaultbyrow(::typeof(select)) = true
-defaultbyrow(::typeof(subset)) = true
-defaultbyrow(::typeof(transform!)) = true
-defaultbyrow(::typeof(select!)) = true
-defaultbyrow(::typeof(subset!)) = true
-defaultbyrow(::typeof(combine)) = false
-defaultbyrow(::typeof(unique)) = true
+function defaultbyrow(s::Symbol)
+    if s == :transform
+        true
+    elseif s == :select
+        true
+    elseif s == :subset
+        true
+    elseif s == :transform!
+        true
+    elseif s == :select!
+        true
+    elseif s == :subset!
+        true
+    elseif s == :combine
+        false
+    elseif s == :unique
+        true
+    else
+        error("Unknown symbol $s")
+    end
+end
+
 
 macro groupby(exprs...)
-    f = select
+    f = :select
     df, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
 
     select_kwexprs = [Expr(:kw, :copycols, false)]
@@ -58,7 +72,7 @@ macro sort!(exprs...)
 end
 
 function sorthelper(exprs...; mutate)
-    f = select
+    f = :select
     df, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
 
     select_kwexprs = [Expr(:kw, :copycols, false)]
@@ -142,16 +156,18 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
 
     pass_missing = 'm' in flags
 
+    func_esc = esc(func)
+
     if pass_missing
-        func = :(passmissing($func))
+        func_esc = :(passmissing($func_esc))
     end
 
-    func = byrow ? :(ByRow($func)) : :($func)
+    func_esc = byrow ? :(ByRow($func_esc)) : :($func_esc)
 
     trans_expr = if target === nothing
-        :([$(clean_columns...)] => $(esc(func)))
+        :([$(clean_columns...)] => $func_esc)
     else
-        :([$(clean_columns...)] => $(esc(func)) => $(esc(target)))
+        :([$(clean_columns...)] => $func_esc => $(esc(target)))
     end
 end
 

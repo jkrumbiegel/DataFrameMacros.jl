@@ -218,3 +218,19 @@ end
     end)
     @test df5 == df2 == df4
 end
+
+module HygieneModule
+    using DataFrameMacros
+    using DataFrames: DataFrames
+    using Test
+
+    @testset "macro hygiene" begin
+        df = DataFrames.DataFrame(x = [1, 2, 3])
+        @test !(@isdefined ByRow)
+        @test !(@isdefined passmissing)
+        @test !(@isdefined transform)
+        @test @transform(df, :y = @m :x + 1) ==
+            DataFrames.transform(df, :x => DataFrames.ByRow(DataFrames.passmissing(x -> x + 1)) => :y)
+    end
+end
+
