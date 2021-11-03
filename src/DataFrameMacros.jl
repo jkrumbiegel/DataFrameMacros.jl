@@ -211,7 +211,7 @@ flagchars = "crmt"
 extract_macro_flags(x) = "", x
 
 function extract_macro_flags(e::Expr)
-    if e.head == :macrocall && all(occursin(flagchars), string(e.args[1])[2:end]) &&
+    if e.head == :macrocall && all(char -> occursin(char, flagchars), string(e.args[1])[2:end]) &&
             length(e.args) == 3
         string(e.args[1])[2:end], e.args[3] 
     else
