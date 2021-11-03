@@ -234,3 +234,45 @@ module HygieneModule
     end
 end
 
+@testset "@subtransform!" begin
+    df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
+    df2 = @subtransform!(df, :y == 2, :x = 5)
+    @test df2.x == [1, 2, 5, 5]
+    @test df2 === df
+
+    df3 = @subtransform!(df, :y == 2, :x = 5, :y = 3)
+    @test df3.x == [1, 2, 5, 5]
+    @test df3.y == [1, 1, 3, 3]
+    @test df3 === df
+
+    df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
+    df4 = @subtransform! df :y == 2 begin
+        :x = 5
+        :y = 3
+    end
+    @test df4.x == [1, 2, 5, 5]
+    @test df4.y == [1, 1, 3, 3]
+    @test df4 === df
+
+    df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
+    df5 = @subtransform! df begin
+        :x > 1
+        :x < 4
+    end begin
+        :x = 5
+        :y = 3
+    end
+    @test df5 === df
+    @test df5.x == [1, 5, 5, 4]
+    @test df5.y == [1, 3, 3, 2]
+
+    df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
+    df6 = @subtransform! df :y == 2 @t begin
+        :x = 6
+        :y = 7
+        :z = 8
+    end
+    @test df6.x == [1, 2, 6, 6]
+    @test df6.y == [1, 1, 7, 7]
+    @test isequal(df6.z, [missing, missing, 8, 8])
+end

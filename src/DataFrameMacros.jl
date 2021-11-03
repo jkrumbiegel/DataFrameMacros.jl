@@ -4,6 +4,7 @@ using Base: ident_cmp
 using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
+export @subtransform!
 
 funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :subset!, :unique
 
@@ -526,5 +527,17 @@ The `@t` flag also works with tuple destructuring syntax, so the previous exampl
 
 const _titanic = include("titanic.jl")
 titanic() = deepcopy(_titanic)
+
+
+macro subtransform!(df, subsetblock, transformblocks...)
+    quote
+        let
+            d = $(esc(df))
+            dfview = @subset(d, $subsetblock; view = true)
+            @transform!(dfview, $(transformblocks...))
+            d
+        end
+    end
+end
 
 end
