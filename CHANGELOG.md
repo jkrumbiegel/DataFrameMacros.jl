@@ -1,3 +1,7 @@
+## v0.2
+
+- Added `@subtransform!` macro that performs a mutating transform on a subset of rows of a DataFrame.
+
 ## v0.1.2
 
 - Fixed macro hygiene and enabled Julia 1.0.
