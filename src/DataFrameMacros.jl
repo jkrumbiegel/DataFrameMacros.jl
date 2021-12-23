@@ -528,7 +528,37 @@ The `@t` flag also works with tuple destructuring syntax, so the previous exampl
 const _titanic = include("titanic.jl")
 titanic() = deepcopy(_titanic)
 
+"""
+    @subtransform!(df, subsetblock, transformblocks...)
 
+Performs `subset` on a DataFrame, then calls `transform!` on the subset
+of rows, then returns the mutated `df` with all rows.
+The first expression after `df` is used as if it was a positional argument
+of the `@subset` macro. All other expressions are used as if they were
+positional arguments of the `@transform!` macro.
+
+## Example
+
+```julia
+julia> df = DataFrame(id = 1:3, value = 'a':'c')
+3×2 DataFrame
+ Row │ id     value 
+     │ Int64  Char  
+─────┼──────────────
+   1 │     1  a
+   2 │     2  b
+   3 │     3  c
+
+julia> @subtransform!(df, :id >= 2, :value = 'd', :new_value = 5)
+3×3 DataFrame
+ Row │ id     value  new_value 
+     │ Int64  Char   Int64?    
+─────┼─────────────────────────
+   1 │     1  a        missing 
+   2 │     2  d              5
+   3 │     3  d              5
+```
+"""
 macro subtransform!(df, subsetblock, transformblocks...)
     quote
         let
