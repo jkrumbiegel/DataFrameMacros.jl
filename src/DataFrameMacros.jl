@@ -562,6 +562,36 @@ julia> @where!(df, :id >= 2, :value = 'd', :new_value = 5)
 If a `GroupedDataFrame` is passed to `@where!`, `@subset` is called with
 the option `ungroup = false`, so that the `@transform!` statement acts
 on each subset group separately. An ungrouped `DataFrame` is then returned.
+
+## Example
+
+```julia
+julia> df = DataFrame(id = [1, 1, 1, 2, 2, 2], val = [0, 1, 3, 1, 2, 3])
+6×2 DataFrame
+ Row │ id     val   
+     │ Int64  Int64 
+─────┼──────────────
+   1 │     1      0
+   2 │     1      1
+   3 │     1      3
+   4 │     2      1
+   5 │     2      2
+   6 │     2      3
+
+julia> gdf = groupby(df, :id);
+
+julia> @where!(gdf, :val != 3, :newval = @c maximum(:val))
+6×3 DataFrame
+ Row │ id     val    newval  
+     │ Int64  Int64  Int64?  
+─────┼───────────────────────
+   1 │     1      0        1
+   2 │     1      1        1
+   3 │     1      3  missing 
+   4 │     2      1        2
+   5 │     2      2        2
+   6 │     2      3  missing 
+```
 """
 macro where!(df, subsetblock, transformblocks...)
     quote
