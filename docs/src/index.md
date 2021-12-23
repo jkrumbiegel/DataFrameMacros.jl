@@ -25,6 +25,7 @@ The following macros are currently available:
 - `@subset` / `@subset!`
 - `@sort` / `@sort!`
 - `@unique`
+- `@where!`
 
 Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
 
