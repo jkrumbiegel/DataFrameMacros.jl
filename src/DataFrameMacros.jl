@@ -1,7 +1,7 @@
 module DataFrameMacros
 
 using Base: ident_cmp
-using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame
+using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame, GroupedDataFrame
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 export @where!
@@ -558,12 +558,20 @@ julia> @where!(df, :id >= 2, :value = 'd', :new_value = 5)
    2 │     2  d              5
    3 │     3  d              5
 ```
+
+If a `GroupedDataFrame` is passed to `@where!`, `@subset` is called with
+the option `ungroup = false`, so that the `@transform!` statement acts
+on each subset group separately. The result is then ungrouped again.
 """
 macro where!(df, subsetblock, transformblocks...)
     quote
         let
             d = $(esc(df))
-            dfview = @subset(d, $subsetblock; view = true)
+            if d isa GroupedDataFrame
+                dfview = @subset(d, $subsetblock; view = true, ungroup = false)
+            else
+                dfview = @subset(d, $subsetblock; view = true)
+            end
             @transform!(dfview, $(transformblocks...))
             d
         end

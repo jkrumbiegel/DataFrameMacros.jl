@@ -276,3 +276,18 @@ end
     @test df6.y == [1, 1, 7, 7]
     @test isequal(df6.z, [missing, missing, 8, 8])
 end
+
+@testset "@where! with grouped dataframes" begin
+    df = DataFrame(id = [1, 1, 1, 2, 2, 2], val = [0, 1, 3, 1, 2, 3])
+    gdf = groupby(df, :id)
+    @where!(gdf, :val != 3, :newval = @c maximum(:val))
+
+    @test isequal(
+        df,
+        DataFrame(
+            id = [1, 1, 1, 2, 2, 2],
+            val = [0, 1, 3, 1, 2, 3],
+            newval = [1, 1, missing, 2, 2, missing],
+        )
+    )
+end
