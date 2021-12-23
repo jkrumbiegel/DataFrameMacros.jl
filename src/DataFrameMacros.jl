@@ -4,7 +4,7 @@ using Base: ident_cmp
 using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
-export @subtransform!
+export @where!
 
 funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :subset!, :unique
 
@@ -529,7 +529,7 @@ const _titanic = include("titanic.jl")
 titanic() = deepcopy(_titanic)
 
 """
-    @subtransform!(df, subsetblock, transformblocks...)
+    @where!(df, subsetblock, transformblocks...)
 
 Performs `subset` on a DataFrame, then calls `transform!` on the subset
 of rows, then returns the mutated `df` with all rows.
@@ -549,7 +549,7 @@ julia> df = DataFrame(id = 1:3, value = 'a':'c')
    2 │     2  b
    3 │     3  c
 
-julia> @subtransform!(df, :id >= 2, :value = 'd', :new_value = 5)
+julia> @where!(df, :id >= 2, :value = 'd', :new_value = 5)
 3×3 DataFrame
  Row │ id     value  new_value 
      │ Int64  Char   Int64?    
@@ -559,7 +559,7 @@ julia> @subtransform!(df, :id >= 2, :value = 'd', :new_value = 5)
    3 │     3  d              5
 ```
 """
-macro subtransform!(df, subsetblock, transformblocks...)
+macro where!(df, subsetblock, transformblocks...)
     quote
         let
             d = $(esc(df))

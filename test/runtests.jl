@@ -234,19 +234,19 @@ module HygieneModule
     end
 end
 
-@testset "@subtransform!" begin
+@testset "@where!" begin
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df2 = @subtransform!(df, :y == 2, :x = 5)
+    df2 = @where!(df, :y == 2, :x = 5)
     @test df2.x == [1, 2, 5, 5]
     @test df2 === df
 
-    df3 = @subtransform!(df, :y == 2, :x = 5, :y = 3)
+    df3 = @where!(df, :y == 2, :x = 5, :y = 3)
     @test df3.x == [1, 2, 5, 5]
     @test df3.y == [1, 1, 3, 3]
     @test df3 === df
 
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df4 = @subtransform! df :y == 2 begin
+    df4 = @where! df :y == 2 begin
         :x = 5
         :y = 3
     end
@@ -255,7 +255,7 @@ end
     @test df4 === df
 
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df5 = @subtransform! df begin
+    df5 = @where! df begin
         :x > 1
         :x < 4
     end begin
@@ -267,7 +267,7 @@ end
     @test df5.y == [1, 3, 3, 2]
 
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df6 = @subtransform! df :y == 2 @t begin
+    df6 = @where! df :y == 2 @t begin
         :x = 6
         :y = 7
         :z = 8
