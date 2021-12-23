@@ -280,7 +280,7 @@ end
 @testset "@where! with grouped dataframes" begin
     df = DataFrame(id = [1, 1, 1, 2, 2, 2], val = [0, 1, 3, 1, 2, 3])
     gdf = groupby(df, :id)
-    @where!(gdf, :val != 3, :newval = @c maximum(:val))
+    df2 = @where!(gdf, :val != 3, :newval = @c maximum(:val))
 
     @test isequal(
         df,
@@ -290,4 +290,6 @@ end
             newval = [1, 1, missing, 2, 2, missing],
         )
     )
+    @test isequal(df2, df)
+    @test df2 !== df
 end

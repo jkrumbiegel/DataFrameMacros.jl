@@ -561,7 +561,7 @@ julia> @where!(df, :id >= 2, :value = 'd', :new_value = 5)
 
 If a `GroupedDataFrame` is passed to `@where!`, `@subset` is called with
 the option `ungroup = false`, so that the `@transform!` statement acts
-on each subset group separately. The result is then ungrouped again.
+on each subset group separately. An ungrouped `DataFrame` is then returned.
 """
 macro where!(df, subsetblock, transformblocks...)
     quote
@@ -573,7 +573,11 @@ macro where!(df, subsetblock, transformblocks...)
                 dfview = @subset(d, $subsetblock; view = true)
             end
             @transform!(dfview, $(transformblocks...))
-            d
+            if d isa GroupedDataFrame
+                DataFrame(d)
+            else
+                d
+            end
         end
     end
 end
