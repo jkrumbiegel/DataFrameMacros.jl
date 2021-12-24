@@ -534,8 +534,10 @@ titanic() = deepcopy(_titanic)
 Performs `subset` on a DataFrame, then calls `transform!` on the subset
 of rows, then returns the mutated `df` with all rows.
 The first expression after `df` is used as if it was a positional argument
-of the `@subset` macro. All other expressions are used as if they were
-positional arguments of the `@transform!` macro.
+of the `@subset` macro. This can also be a `begin end` block with multiple
+subset statements. All other expressions are used as if they were
+positional arguments of the `@transform!` macro. This can also be a `begin end`
+block with multiple statements.
 
 ## Example
 
@@ -561,7 +563,7 @@ julia> @where!(df, :id >= 2, :value = 'd', :new_value = 5)
 
 If a `GroupedDataFrame` is passed to `@where!`, `@subset` is called with
 the option `ungroup = false`, so that the `@transform!` statement acts
-on each subset group separately. An ungrouped `DataFrame` is then returned.
+on each subset group separately. The input `GroupedDataFrame` is then returned.
 
 ## Example
 
@@ -603,11 +605,7 @@ macro where!(df, subsetblock, transformblocks...)
                 dfview = @subset(d, $subsetblock; view = true)
             end
             @transform!(dfview, $(transformblocks...))
-            if d isa GroupedDataFrame
-                DataFrame(d)
-            else
-                d
-            end
+            d
         end
     end
 end
