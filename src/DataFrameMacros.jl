@@ -594,6 +594,19 @@ julia> @where!(gdf, :val != 3, :newval = @c maximum(:val))
    5 │     2      2        2
    6 │     2      3  missing 
 ```
+
+For multiple `subset` statements, you can use a `begin end` block,
+and the same is true for the `transform` argument.
+
+```julia
+@where! df begin
+    :x > 1
+    :y < 2
+end begin
+    :z1 = 3
+    :z2 = 4
+end
+```
 """
 macro where!(df, subsetblock, transformblocks...)
     quote
