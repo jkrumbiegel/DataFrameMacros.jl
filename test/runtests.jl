@@ -280,7 +280,7 @@ end
 @testset "@transform! with @subset with grouped dataframes" begin
     df = DataFrame(id = [1, 1, 1, 2, 2, 2], val = [0, 1, 3, 1, 2, 3])
     gdf = groupby(df, :id)
-    gdf2 = @transform!(gdf, @subset(:val != 3), :newval = @c maximum(:val))
+    df2 = @transform!(gdf, @subset(:val != 3), :newval = @c maximum(:val))
 
     @test isequal(
         df,
@@ -290,5 +290,5 @@ end
             newval = [1, 1, missing, 2, 2, missing],
         )
     )
-    @test gdf2 === gdf
+    @test df2 === df
 end

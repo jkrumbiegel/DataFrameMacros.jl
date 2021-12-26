@@ -14,8 +14,7 @@ You can pass a `@subset` expression as the second argument to `@$f`,
 between the input argument and the source-function-sink expressions.
 Then, the call is equivalent to first taking a `subset` of the input
 with `view = true`, then calling `$f` on the subset and returning the
-mutated input. If the input is a `GroupedDataFrame`, it is returned
-grouped.
+mutated input. If the input is a `GroupedDataFrame`, the parent `DataFrame` is returned.
 
 ```julia
 df = DataFrame(x = 1:5, y = 6:10)
@@ -118,6 +117,7 @@ function macrohelper(f, exprs...)
 
     if subset_expr !== nothing
         dfsym = gensym()
+        dfsym_e = esc(dfsym)
         subset_converted = convert_subset_expr(subset_expr, dfsym)
         subset_converted_ungroup_false = copy(subset_converted)
         scg = subset_converted_ungroup_false
@@ -132,14 +132,18 @@ function macrohelper(f, exprs...)
         call_expr = build_call(f, subs, converted, kw_exprs)
         e = quote
             let
-                $(esc(dfsym)) = $(esc(df))
-                if $(esc(dfsym)) isa GroupedDataFrame
+                $dfsym_e = $(esc(df))
+                if $dfsym_e isa GroupedDataFrame
                     $(esc(subs)) = $subset_converted_ungroup_false
                 else
                     $(esc(subs)) = $subset_converted
-                end  
+                end
                 $call_expr
-                $(esc(dfsym))
+                if $dfsym_e isa GroupedDataFrame
+                    parent($dfsym_e)
+                else
+                    $dfsym_e
+                end
             end
         end
         return e
