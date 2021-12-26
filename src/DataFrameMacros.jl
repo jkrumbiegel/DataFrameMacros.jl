@@ -121,26 +121,28 @@ function macrohelper(f, exprs...)
         subset_converted = convert_subset_expr(subset_expr, dfsym)
         subset_converted_ungroup_false = copy(subset_converted)
         scg = subset_converted_ungroup_false
-        if scg.args[3] isa Expr && scg.args[3].head == :parameters
-            push!(scg.args[3].args, Expr(:kw, :ungroup, false))
+
+        if scg.args[2] isa Expr && scg.args[2].head == :parameters
+            push!(scg.args[2].args, Expr(:kw, :ungroup, false))
         else
-            insert!(scg.args[3].args, Expr(:parameters, Expr(:kw, :ungroup, false)))
+            insert!(scg.args, 2, Expr(:parameters, Expr(:kw, :ungroup, false)))
         end
 
         subs = gensym()
         call_expr = build_call(f, subs, converted, kw_exprs)
-        return quote
+        e = quote
             let
-                $dfsym = $(esc(df))
-                if $dfsym isa GroupedDataFrame
+                $(esc(dfsym)) = $(esc(df))
+                if $(esc(dfsym)) isa GroupedDataFrame
                     $(esc(subs)) = $subset_converted_ungroup_false
                 else
                     $(esc(subs)) = $subset_converted
                 end  
                 $call_expr
-                $dfsym
+                $(esc(dfsym))
             end
         end
+        return e
     else
         return build_call(f, df, converted, kw_exprs)
     end
@@ -156,12 +158,7 @@ function convert_subset_expr(subset_expr, df)
         insert!(args, 1, df)
         insert!(args, 1, Expr(:parameters, viewtrue_kw))
     end
-    Expr(
-        :macrocall,
-        Symbol("@subset"),
-        subset_expr.args[2], # LineNumberNode
-        args...
-    )
+    macrohelper(:subset, args...)
 end
 
 function build_call(f, df, converted, kw_exprs)
