@@ -1,11 +1,27 @@
 module DataFrameMacros
 
 using Base: ident_cmp
-using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame
+using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame, GroupedDataFrame
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 
 funcsymbols = :transform, :transform!, :select, :select!, :combine, :subset, :subset!, :unique
+
+subset_argument_docs(f) = """
+## @subset argument
+
+You can pass a `@subset` expression as the second argument to `@$f`,
+between the input argument and the source-function-sink expressions.
+Then, the call is equivalent to first taking a `subset` of the input
+with `view = true`, then calling `$f` on the subset and returning the
+mutated input. If the input is a `GroupedDataFrame`, it is returned
+grouped.
+
+```julia
+df = DataFrame(x = 1:5, y = 6:10)
+@$f(df, @subset(:x > 3), :y = 20, :z = 3 * :x)
+```
+"""
 
 for f in funcsymbols
     @eval begin
@@ -17,6 +33,8 @@ for f in funcsymbols
         Keyword arguments `kwargs` are passed down to `$($f)` but have to be separated from the positional arguments by a semicolon `;`.
 
         The transformation logic for all DataFrameMacros macros is explained in the `DataFrameMacros` module docstring, accessible via `?DataFrameMacros`.
+
+        $($f in (transform!, select!) ? subset_argument_docs($f) : "")
         """
         macro $f(exprs...)
             macrohelper($(QuoteNode(f)), exprs...)
@@ -49,7 +67,7 @@ end
 
 macro groupby(exprs...)
     f = :select
-    df, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
+    df, subset_expr, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
 
     select_kwexprs = [Expr(:kw, :copycols, false)]
     select_call = build_call(f, df, func, select_kwexprs)
@@ -73,7 +91,7 @@ end
 
 function sorthelper(exprs...; mutate)
     f = :select
-    df, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
+    df, subset_expr, func, kw_exprs = df_funcs_kwexprs(f, exprs...)
 
     select_kwexprs = [Expr(:kw, :copycols, false)]
     select_call = build_call(f, df, func, select_kwexprs)
@@ -96,15 +114,85 @@ function sorthelper(exprs...; mutate)
 end
 
 function macrohelper(f, exprs...)
-    df, converted, kw_exprs = df_funcs_kwexprs(f, exprs...)
-    build_call(f, df, converted, kw_exprs)
+    df, subset_expr, converted, kw_exprs = df_funcs_kwexprs(f, exprs...)
+
+    if subset_expr !== nothing
+        dfsym = gensym()
+        subset_converted = convert_subset_expr(subset_expr, dfsym)
+        subset_converted_ungroup_false = copy(subset_converted)
+        scg = subset_converted_ungroup_false
+        if scg.args[3] isa Expr && scg.args[3].head == :parameters
+            push!(scg.args[3].args, Expr(:kw, :ungroup, false))
+        else
+            insert!(scg.args[3].args, Expr(:parameters, Expr(:kw, :ungroup, false)))
+        end
+
+        subs = gensym()
+        call_expr = build_call(f, subs, converted, kw_exprs)
+        return quote
+            let
+                $dfsym = $(esc(df))
+                if $dfsym isa GroupedDataFrame
+                    $(esc(subs)) = $subset_converted_ungroup_false
+                else
+                    $(esc(subs)) = $subset_converted
+                end  
+                $call_expr
+                $dfsym
+            end
+        end
+    else
+        return build_call(f, df, converted, kw_exprs)
+    end
+end
+
+function convert_subset_expr(subset_expr, df)
+    args = subset_expr.args[3:end]
+    viewtrue_kw = Expr(:kw, :view, true)
+    if args[1] isa Expr && args[1].head == :parameters
+        push!(args[1].args, viewtrue_kw)
+        insert!(args, 2, df)
+    else
+        insert!(args, 1, df)
+        insert!(args, 1, Expr(:parameters, viewtrue_kw))
+    end
+    Expr(
+        :macrocall,
+        Symbol("@subset"),
+        subset_expr.args[2], # LineNumberNode
+        args...
+    )
 end
 
 function build_call(f, df, converted, kw_exprs)
     :($f($(esc(df)), $(converted...); $(map(esc, kw_exprs)...)))
 end
 
+function extract_subset_expr!(exprs, f)
+    subset_expr = nothing
+
+    i_subsets = findall(is_subset_expr, exprs)
+
+    if !isempty(i_subsets) && f ∉ (:transform!, :select!)
+        error("The `@subset` argument syntax only works with `@transform!` and `@select!`, not `@$f`")
+    end
+
+    if length(i_subsets) > 1
+        error("Only one @subset argument allowed, found $(length(i_subsets))")
+    elseif length(i_subsets) == 1
+        if first(i_subsets) != 1
+            error("A @subset expression must be used after the dataframe argument and before all source-function-sink expressions.")
+        end
+        subset_expr = popfirst!(exprs)
+    end
+
+    subset_expr
+end
+
 function df_funcs_kwexprs(f, exprs...)
+
+    exprs = [exprs...]
+
     if length(exprs) >= 1 && exprs[1] isa Expr && exprs[1].head == :parameters
         kw_exprs = exprs[1].args
         df = exprs[2]
@@ -115,15 +203,20 @@ function df_funcs_kwexprs(f, exprs...)
         kw_exprs = []
     end
 
+    subset_expr = extract_subset_expr!(source_func_sink_exprs, f)
+
     if length(source_func_sink_exprs) == 1 && is_block_expression(source_func_sink_exprs[1])
         source_func_sink_exprs = extract_source_func_sink_exprs_from_block(
             source_func_sink_exprs[1])
     end
 
     converted = map(e -> convert_source_funk_sink_expr(f, e, df), source_func_sink_exprs)
-    df, converted, kw_exprs
+    df, subset_expr, converted, kw_exprs
 end
 
+is_subset_expr(x) = false
+is_subset_expr(e::Expr) = e.head == :macrocall &&
+    e.args[1] == Symbol("@subset")
 
 is_block_expression(x) = false
 is_block_expression(e::Expr) = e.head == :block
