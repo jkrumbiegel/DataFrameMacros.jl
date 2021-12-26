@@ -1,6 +1,6 @@
 ## v0.2
 
-- Added `@where!` macro that performs a mutating transform on a subset of rows of a DataFrame.
+- Added `@subset` argument for `@transform!` and `@select!` that performs a mutating transform on a subset of rows of a DataFrame.
 
 ## v0.1.2
 

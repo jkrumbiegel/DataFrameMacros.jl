@@ -234,19 +234,19 @@ module HygieneModule
     end
 end
 
-@testset "@where!" begin
+@testset "@subset arg for `transform`" begin
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df2 = @where!(df, :y == 2, :x = 5)
+    df2 = @transform!(df, @subset(:y == 2), :x = 5)
     @test df2.x == [1, 2, 5, 5]
     @test df2 === df
 
-    df3 = @where!(df, :y == 2, :x = 5, :y = 3)
+    df3 = @transform!(df, @subset(:y == 2), :x = 5, :y = 3)
     @test df3.x == [1, 2, 5, 5]
     @test df3.y == [1, 1, 3, 3]
     @test df3 === df
 
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df4 = @where! df :y == 2 begin
+    df4 = @transform! df @subset(:y == 2) begin
         :x = 5
         :y = 3
     end
@@ -255,10 +255,10 @@ end
     @test df4 === df
 
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df5 = @where! df begin
+    df5 = @transform! df @subset(begin
         :x > 1
         :x < 4
-    end begin
+    end) begin
         :x = 5
         :y = 3
     end
@@ -267,7 +267,7 @@ end
     @test df5.y == [1, 3, 3, 2]
 
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df6 = @where! df :y == 2 @t begin
+    df6 = @transform! df @subset(:y == 2) @t begin
         :x = 6
         :y = 7
         :z = 8
@@ -277,10 +277,10 @@ end
     @test isequal(df6.z, [missing, missing, 8, 8])
 end
 
-@testset "@where! with grouped dataframes" begin
+@testset "@transform! with @subset with grouped dataframes" begin
     df = DataFrame(id = [1, 1, 1, 2, 2, 2], val = [0, 1, 3, 1, 2, 3])
     gdf = groupby(df, :id)
-    gdf2 = @where!(gdf, :val != 3, :newval = @c maximum(:val))
+    gdf2 = @transform!(gdf, @subset(:val != 3), :newval = @c maximum(:val))
 
     @test isequal(
         df,
