@@ -364,7 +364,8 @@ end
 is_column_expr(q::QuoteNode) = true
 is_column_expr(x) = false
 function is_column_expr(e::Expr)
-    e.head == :$ && !is_escaped_symbol(e)
+    e.head == :call && e.args[1] in (:Not, :Between, :All) ||
+        (e.head == :$ && !is_escaped_symbol(e))
 end
 
 function make_function_expr(formula, columns)
