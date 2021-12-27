@@ -237,7 +237,7 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         if target !== nothing
             error("There should be no target expression when the @t flag is used. The implicit target is `AsTable`. Target received was $target")
         end
-        target_expr = :(DataFrames.AsTable)
+        target_expr = AsTable
         formula = convert_automatic_astable_formula(formula)
     else
         target_expr = make_target_expression(df, target)
@@ -271,12 +271,14 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         end
     else
         if formula_is_column
-            :($(stringified_columns...) .=> $(esc(target_expr)))
+            :($(stringified_columns...) .=> $target_expr)
         else
-            :($(esc(vcat)).($(stringified_columns...)) .=> $func_esc .=> $(esc(target_expr)))
+            :($(esc(vcat)).($(stringified_columns...)) .=> $func_esc .=> $target_expr)
         end
     end
 end
+
+make_target_expression(df, ::Nothing) = nothing
 
 function make_target_expression(df, expr)
     # not really columns but resolved names
@@ -290,8 +292,10 @@ function make_target_expression(df, expr)
             return e.args[1]
         end
 
-        # check if this expression matches one of the column expressions
-        # and wrap it in names(df, ex) if it matches
+        # Check if this expression matches one of the column expressions
+        # and wrap it with DataFrameMacros.stringargs(df, ex) if it matches.
+        # This will later resolve to a vector of strings, which DataFrames
+        # can handle.
         i = findfirst(c -> c == e, columns)
         if i === nothing
             e
@@ -301,7 +305,50 @@ function make_target_expression(df, expr)
         end
     end
 
-    replaced_expr
+    esc(replaced_expr)
+end
+
+function make_target_expression(df, s::String)
+    indices = findall(r"{\d*}", s)
+    if isempty(indices)
+        s
+    else
+        string_to_index_expr(indices, s)
+    end
+end
+
+function string_to_index_expr(indices, s)
+    e = Expr(:string)
+    index = 1
+    i = 1
+    sym = gensym()
+    while index < length(s)
+        if index < indices[i].start
+            push!(e.args, s[index:indices[i].start-1])
+            index = indices[i].start
+        elseif index == indices[i].start
+            bracketcontent = s[indices[i]][2:end-1]
+            if isempty(bracketcontent)
+                push!(e.args, :(getindex_colnames($sym, 1)))
+            else
+                j = parse(Int, bracketcontent)
+                push!(e.args, :(getindex_colnames($sym, $j)))
+            end
+            index = indices[i].stop + 1
+            i = i < length(indices) ? i + 1 : i
+        else
+            push!(e.args, s[index:end])
+            break
+        end
+    end
+    :($sym -> $e)
+end
+
+function getindex_colnames(names, i)
+    if !(1 <= i <= length(names))
+        error("Invalid string index $i for $(length(names)) column name$(length(names) > 1 ? "s" : "") $names")
+    end
+    names[i]
 end
 
 function split_formula(e::Expr)
