@@ -1,7 +1,7 @@
 module DataFrameMacros
 
 using Base: ident_cmp
-using DataFrames: transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame, GroupedDataFrame
+using DataFrames: DataFrames, transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame, GroupedDataFrame
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 
@@ -237,13 +237,18 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         if target !== nothing
             error("There should be no target expression when the @t flag is used. The implicit target is `AsTable`. Target received was $target")
         end
-        target = :(AsTable)
+        target_expr = AsTable
         formula = convert_automatic_astable_formula(formula)
+    else
+        target_expr = make_target_expression(df, target)
     end
+
+    formula_is_column = is_column_expr(formula)
 
     columns = gather_columns(formula)
     func, columns = make_function_expr(formula, columns)
     clean_columns = map(c -> clean_column(c, df), columns)
+    stringified_columns = [esc(stringarg_expr(c, df)) for c in clean_columns]
 
     byrow = (defaultbyrow(f) && !('c' in flags)) ||
         (!defaultbyrow(f) && ('r' in flags))
@@ -258,11 +263,119 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
 
     func_esc = byrow ? :(ByRow($func_esc)) : :($func_esc)
 
-    trans_expr = if target === nothing
-        :([$(clean_columns...)] => $func_esc)
+    trans_expr = if target_expr === nothing
+        if formula_is_column
+            :($(stringified_columns...) .=> $(stringified_columns...))
+        else
+            :($(esc(vcat)).($(stringified_columns...)) .=> $func_esc)
+        end
     else
-        :([$(clean_columns...)] => $func_esc => $(esc(target)))
+        if formula_is_column
+            :($(stringified_columns...) .=> $target_expr)
+        else
+            :($(esc(vcat)).($(stringified_columns...)) .=> $func_esc .=> $target_expr)
+        end
     end
+end
+
+make_target_expression(df, ::Nothing) = nothing
+
+function make_target_expression(df, expr)
+
+    if expr isa Expr && expr.head == :string && any(is_target_shortcut_string, expr.args)
+        return shortcut_string_expr_to_target_expr(expr)
+    end
+
+    # not really columns but resolved names
+    columns = gather_columns(expr)
+    clean_columns = map(c -> clean_column(c, df), columns)
+
+    replaced_expr = postwalk(expr) do e
+        # check first if this is an escaped symbol
+        # and if yes return it unwrapped
+        if is_escaped_symbol(e)
+            return e.args[1]
+        end
+
+        # Check if this expression matches one of the column expressions
+        # and wrap it with DataFrameMacros.stringargs(df, ex) if it matches.
+        # This will later resolve to a vector of strings, which DataFrames
+        # can handle.
+        i = findfirst(c -> c == e, columns)
+        if i === nothing
+            e
+        else
+            c = clean_columns[i]
+            stringarg_expr(c, df)
+        end
+    end
+
+    esc(replaced_expr)
+end
+
+function make_target_expression(df, s::String)
+    if !(is_target_shortcut_string(s))
+        s
+    else
+        shortcut_string_expr_to_target_expr(s)
+    end
+end
+
+is_target_shortcut_string(s::String) = match(r"{\d*}", s) !== nothing
+is_target_shortcut_string(x) = false
+
+function shortcut_string_expr_to_target_expr(e::Expr)
+    sym = gensym()
+    newargs = mapreduce(vcat, e.args) do arg
+        if is_target_shortcut_string(arg)
+            shortcut_string_expr_to_target_expr_args(arg, sym)
+        else
+            esc(arg)
+        end
+    end
+    e = Expr(:string, newargs...)
+    :($sym -> $e)
+end
+
+function shortcut_string_expr_to_target_expr(s::String)
+    sym = gensym()
+    args = shortcut_string_expr_to_target_expr_args(s, sym)
+    e = Expr(:string, args...)
+    :($sym -> $e)
+end
+
+function shortcut_string_expr_to_target_expr_args(s::String, sym)
+    indices = findall(r"{\d*}", s)
+    args = []
+    index = 1
+    i = 1
+    while index < length(s)
+        if index < indices[i].start
+            push!(args, s[index:indices[i].start-1])
+            index = indices[i].start
+        elseif index == indices[i].start
+            bracketcontent = s[indices[i]][2:end-1]
+            if isempty(bracketcontent)
+                push!(args, :(getindex_colnames($sym, 1)))
+            else
+                j = parse(Int, bracketcontent)
+                push!(args, :(getindex_colnames($sym, $j)))
+            end
+            index = indices[i].stop + 1
+            i = i < length(indices) ? i + 1 : i
+        else
+            push!(args, s[index:end])
+            break
+        end
+    end
+    args
+end
+
+function getindex_colnames(names, i)
+    if !(1 <= i <= length(names))
+        error("Invalid string index $i for $(length(names)) column name$(length(names) > 1 ? "s" : "") $names")
+    end
+    names[i]
 end
 
 function split_formula(e::Expr)
@@ -325,7 +438,8 @@ end
 is_column_expr(q::QuoteNode) = true
 is_column_expr(x) = false
 function is_column_expr(e::Expr)
-    e.head == :$ && !is_escaped_symbol(e)
+    e.head == :call && e.args[1] in (:Not, :Between, :All) ||
+        (e.head == :$ && !is_escaped_symbol(e))
 end
 
 function make_function_expr(formula, columns)
@@ -358,24 +472,30 @@ function make_function_expr(formula, columns)
     expr, columns
 end
 
-clean_column(x::QuoteNode, df) = x
-clean_column(x, df) = :(symbolarg($x, $df))
+stringarg_expr(x, df) = :(DataFrameMacros.stringargs($x, $df))
+stringarg_expr(x::String, df) = x
+
+clean_column(x::QuoteNode, df) = string(x.value)
+clean_column(x, df) = :(DataFrameMacros.stringargs($x, $df))
+clean_column(x::String, df) = x
 function clean_column(e::Expr, df)
-    e = if e.head == :$
+    stripped_e = if e.head == :$
         e.args[1]
     else
         e
     end
-    if e isa String
-        QuoteNode(Symbol(e))
-    else
-        :(symbolarg($(esc(e)), $(esc(df))))
-    end
 end
 
-symbolarg(x::Int, df) = Symbol(names(df)[x])
-symbolarg(sym::Symbol, df) = sym
-symbolarg(s::String, df) = Symbol(s)
+stringargs(x, df) = names(df, x)
+stringargs(a::AbstractVector, df) = names(df, a)
+# this is needed because from matrix up `names` fails
+function stringargs(a::AbstractArray, df)
+    s = size(a)
+    reshape(names(df, vec(a)), s)
+end
+
+stringargs(sym::Symbol, df) = string(sym)
+stringargs(s::String, df) = s
 
 is_escaped_symbol(e::Expr) = e.head == :$ && length(e.args) == 1 && e.args[1] isa QuoteNode
 is_escaped_symbol(x) = false
@@ -460,19 +580,20 @@ All macros have signatures of the form:
 @macro(df, args...; kwargs...)
 ```
 
-Each positional argument in `args` is converted to a `source => function => sink` expression for the transformation mini-language of DataFrames.
+Each positional argument in `args` is converted to a `source .=> function .=> sink` expression for the transformation mini-language of DataFrames.
 By default, all macros execute the given function **by-row**, only `@combine` executes **by-column**.
+There is automatic broadcasting across all column specifiers, so it is possible to directly use multi-column specifiers such as `All()`, `Not(:x)`, `r"columnname"` and `startswith("prefix")`.
 
 For example, the following pairs of expressions are equivalent:
 
 ```julia
-transform(df, :x => ByRow(x -> x + 1) => :y)
+transform(df, :x .=> ByRow(x -> x + 1) .=> :y)
 @transform(df, :y = :x + 1)
 
-sort(df, :x => ByRow(x -> x ^ 2))
-@sort(df, :x ^ 2)
+select(df, names(df, All()) .=> ByRow(x -> x ^ 2))
+@select(df, \$(All()) ^ 2)
 
-combine(df, :x => (x -> sum(x) / 5) => :result)
+combine(df, :x .=> (x -> sum(x) / 5) .=> :result)
 @combine(df, :result = sum(:x) / 5)
 ```
 
@@ -480,7 +601,7 @@ combine(df, :x => (x -> sum(x) / 5) => :result)
 
 Each positional argument must be of the form `[sink =] some_expression`.
 Columns can be referenced within `sink` or `some_expression` using a `Symbol`, a `String`, or an `Int`.
-Any column identifier that is not a `Symbol` must be prefaced with the interpolation symbol `\$`.
+Any column identifier that is not a `Symbol` or one of the multicolumn selectors `All()`, `Between()` and `Not()` must be prefaced with the interpolation symbol `\$`.
 The `\$` interpolation symbol also allows to use variables or expressions that evaluate to column identifiers.
 
 The five expressions in the following code block are equivalent.
@@ -499,6 +620,24 @@ col = :x
 cols = [:x, :y, :z]
 @transform(df, :y = \$(cols[1]) + 1)
 ```
+
+### Multi-column references
+
+You can also use multi-column specifiers.
+For example `@select(df, sqrt(Between(2, 4)))` acts as if the function `sqrt` is applied along each column that belongs to the group selected by `Between(2, 4)`.
+Because the source-function-sink complex is connected by broadcasted pairs like `source .=> function .=> sink`, you can use multi-column specifiers together with single-column specifiers in the same expression.
+For example, `@select(df, All() + :x)` would compute `df.some_column + df.x` for each column in the DataFrame `df`.
+
+### Sink names in multi-column scenarios
+
+For most complex function expressions, DataFrames concatenates all names of the columns that you used to create a new sink column name, which looks like `col1_col2_function`.
+It's common that you want to use a different naming scheme, but you can't write `@select(df, :x = All() + 1)` because then every new column would be named `x` and that is disallowed.
+There are several options to deal with the problem of multiple new columns:
+
+- You can use a Vector of strings such as `["x", "y", "z"] = sqrt(All())`, the length has to match the number of columns in the multi-column specifier. This is the most direct way to specify multiple names, but it doesn't leverage the names of the used columns dynamically.
+- You can reference existing column names and modify them somehow, like `"sqrt_of_" .* All()) = sqrt(All())`. Note that column specifiers on the left-hand side of the `=` operator like `All()` are resolved to a Vector of column names, not to the content of the columns like on the right-hand side. This requires you to repeat selectors, though.
+- You can use a function that takes in a vector of column names (even if there's just one) and outputs a new column name, like `(cols -> uppercase(cols[1])) = sqrt(All())`.
+- You can use DataFrameMacro's string shortcut syntax. If there's a string literal with one or more {} brackets, it's treated as an anonymous function that takes in column names and splices them into the string. `{}` is equivalent to `{1}`, but you can access further names with `{2}` and so on, if there is more than one column used in the function. In the example above, you could rename all columns with `@select(df, "sqrt_of_{}" = sqrt(All()))`.
 
 ## Passing multiple expressions
 

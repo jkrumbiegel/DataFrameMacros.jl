@@ -172,3 +172,85 @@ This can often make assignments of multiple columns even more terse:
     :last_name, :title, :first_name, rest... = split(:Name, r"[\s,]+")
 end)
 ```
+
+## Multi-column specifiers
+
+Sometimes you want to apply certain transformations to multiple columns at once.
+In DataFrameMacros, you can use multi-column specifiers like a vector of column names, or constructs such as `All()`, `Between()` and `Not()`.
+The function you write is applied once for each column in the multi-column specifier.
+You can use one multi-column specifier together in one expression with as many single-column specifiers as you want, only if you use multiple multi-column specifiers together do you have to be careful that the lengths match.
+
+Let's say we wanted to round and convert to Integer the two columns `Age` and `Fare`.
+We can just make a vector of these two column names and apply the same function on this multi-column specifier.
+We have to mark it as a column specifier with the `$` operator.
+We also add `@m` to pass through the missing values in the `Age` column:
+
+```@repl 1
+@select(df, @m round(Int, $[:Age, :Fare]))
+```
+
+We could of course also put the vector in a variable `columns` and then apply `@select(df, @m round(Int, $columns))` for legibility.
+
+You can see that the operation worked as intended, but this resulted in ugly column names.
+If we want to specify column names, we can for example pass a vector of names before the `=` sign:
+
+```@repl 1
+@select(df, ["AgeInt", "FareInt"] = @m round(Int, $[:Age, :Fare]))
+```
+
+But here we had to repeat `Age` and `Fare` manually, if we had more columns this could get tedious quickly.
+Another option is to pass a renamer function, this takes in a vector of all column names used in each call and outputs a new name.
+Note that this receives `["Age"]` in one call and `["Fare"]` in the other, not both together.
+
+```@repl 1
+@select(df, (cols -> cols[1] * "Int") = @m round(Int, $[:Age, :Fare]))
+```
+
+This is flexible but a little bit more verbose than we would like.
+In most situations we actually just want a pre- or suffix for the manipulated column names.
+That's why DataFrameMacros has a shortcut string syntax.
+You can pass a string literal that contains at least one pair of `{}` and this will be converted to an anonymous renamer function automatically.
+
+This shortens the example to:
+
+```@repl 1
+@select(df, "{}Int" = @m round(Int, $[:Age, :Fare]))
+```
+
+If there are multiple columns in one expression, you can reference them with numbers in the brackets, `"{}"` is equivalent to `"{1}"`, then comes `"{2}"` for the second column and so on.
+
+Here are a couple more examples of multi-column expressions.
+They are not necessarily meaningful but just serve as examples of what is possible:
+
+```@repl 1
+@select(df, "{}Reverse" = reverse($String))
+```
+
+```@repl 1
+@select(df, "{}IsZero" = All() == 0)
+```
+
+```@repl 1
+@select(df, "{}16" = Int16(Between(1, 3)))
+```
+
+## Transforming subsets
+
+Sometimes you want to change values in a DataFrame, but only in rows that fulfill some condition.
+This can be achieved by this order of operations in basic DataFrames.jl:
+
+```julia
+df = DataFrame(...)
+subset_view = subset(df, some_conditions..., view = true)
+transform!(subset_view, some_transformations...)
+# df is now mutated
+```
+
+This can be done in DataFrameMacros.jl with just one operation, using an optional `@subset` argument to `@transform!` or `@select!`.
+Just as a nonsensical but easily visible example, we could uppercase the names of all surviving passengers:
+
+```@repl 1
+@transform!(df, @subset(:Survived == 1), :Name = uppercase(:Name))
+```
+
+The `@subset` argument should look exactly the same as the normal `@subset` macro, just without the first DataFrame argument.
