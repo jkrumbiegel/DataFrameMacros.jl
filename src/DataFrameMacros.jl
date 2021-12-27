@@ -281,6 +281,11 @@ end
 make_target_expression(df, ::Nothing) = nothing
 
 function make_target_expression(df, expr)
+
+    if expr isa Expr && expr.head == :string && any(is_target_shortcut_string, expr.args)
+        return shortcut_string_expr_to_target_expr(expr)
+    end
+
     # not really columns but resolved names
     columns = gather_columns(expr)
     clean_columns = map(c -> clean_column(c, df), columns)
@@ -309,39 +314,61 @@ function make_target_expression(df, expr)
 end
 
 function make_target_expression(df, s::String)
-    indices = findall(r"{\d*}", s)
-    if isempty(indices)
+    if !(is_target_shortcut_string(s))
         s
     else
-        string_to_index_expr(indices, s)
+        shortcut_string_expr_to_target_expr(s)
     end
 end
 
-function string_to_index_expr(indices, s)
-    e = Expr(:string)
+is_target_shortcut_string(s::String) = match(r"{\d*}", s) !== nothing
+is_target_shortcut_string(x) = false
+
+function shortcut_string_expr_to_target_expr(e::Expr)
+    sym = gensym()
+    newargs = mapreduce(vcat, e.args) do arg
+        if is_target_shortcut_string(arg)
+            shortcut_string_expr_to_target_expr_args(arg, sym)
+        else
+            esc(arg)
+        end
+    end
+    e = Expr(:string, newargs...)
+    :($sym -> $e)
+end
+
+function shortcut_string_expr_to_target_expr(s::String)
+    sym = gensym()
+    args = shortcut_string_expr_to_target_expr_args(s, sym)
+    e = Expr(:string, args...)
+    :($sym -> $e)
+end
+
+function shortcut_string_expr_to_target_expr_args(s::String, sym)
+    indices = findall(r"{\d*}", s)
+    args = []
     index = 1
     i = 1
-    sym = gensym()
     while index < length(s)
         if index < indices[i].start
-            push!(e.args, s[index:indices[i].start-1])
+            push!(args, s[index:indices[i].start-1])
             index = indices[i].start
         elseif index == indices[i].start
             bracketcontent = s[indices[i]][2:end-1]
             if isempty(bracketcontent)
-                push!(e.args, :(getindex_colnames($sym, 1)))
+                push!(args, :(getindex_colnames($sym, 1)))
             else
                 j = parse(Int, bracketcontent)
-                push!(e.args, :(getindex_colnames($sym, $j)))
+                push!(args, :(getindex_colnames($sym, $j)))
             end
             index = indices[i].stop + 1
             i = i < length(indices) ? i + 1 : i
         else
-            push!(e.args, s[index:end])
+            push!(args, s[index:end])
             break
         end
     end
-    :($sym -> $e)
+    args
 end
 
 function getindex_colnames(names, i)
