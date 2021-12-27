@@ -233,3 +233,24 @@ They are not necessarily meaningful but just serve as examples of what is possib
 ```@repl 1
 @select(df, "{}16" = Int16(Between(1, 3)))
 ```
+
+## Transforming subsets
+
+Sometimes you want to change values in a DataFrame, but only in rows that fulfill some condition.
+This can be achieved by this order of operations in basic DataFrames.jl:
+
+```julia
+df = DataFrame(...)
+subset_view = subset(df, some_conditions..., view = true)
+transform!(subset_view, some_transformations...)
+# df is now mutated
+```
+
+This can be done in DataFrameMacros.jl with just one operation, using an optional `@subset` argument to `@transform!` or `@select!`.
+Just as a nonsensical but easily visible example, we could uppercase the names of all surviving passengers:
+
+```julia
+@transform!(df, @subset(:Survived == 1), :Name = uppercase(:Name))
+```
+
+The `@subset` argument should look exactly the same as the normal `@subset` macro, just without the first DataFrame argument.
