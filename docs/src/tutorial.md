@@ -218,3 +218,18 @@ This shortens the example to:
 ```
 
 If there are multiple columns in one expression, you can reference them with numbers in the brackets, `"{}"` is equivalent to `"{1}"`, then comes `"{2}"` for the second column and so on.
+
+Here are a couple more examples of multi-column expressions.
+They are not necessarily meaningful but just serve as examples of what is possible:
+
+```@repl 1
+@select(df, "{}Reverse" = reverse($String))
+```
+
+```@repl 1
+@select(df, "{}IsZero" = All() == 0)
+```
+
+```@repl 1
+@select(df, "{}16" = Int16(Between(1, 3)))
+```
