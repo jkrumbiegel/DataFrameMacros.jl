@@ -1,3 +1,8 @@
+## v0.2.1
+
+- Added ability to use multi-column expressions with `All()`, `Between()`, `Not()`, as well as any other multi-column identifier such as `$Real` for all columns of eltype `Real`.
+- Added shortcut string option to specify renaming structures, e.g. `@transform(df, "sqrt_of_{}" = sqrt(All()))`.
+
 ## v0.2
 
 - Added `@subset` argument for `@transform!` and `@select!` that performs a mutating transform on a subset of rows of a DataFrame.
