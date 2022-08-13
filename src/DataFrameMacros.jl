@@ -438,8 +438,7 @@ end
 is_column_expr(q::QuoteNode) = true
 is_column_expr(x) = false
 function is_column_expr(e::Expr)
-    e.head == :call && e.args[1] in (:Not, :Between, :All) ||
-        (e.head == :$ && !is_escaped_symbol(e))
+    e.head == :call && e.args[1] in (:Not, :Between, :All) || e.head == :braces
 end
 
 function make_function_expr(formula, columns)
@@ -479,8 +478,8 @@ clean_column(x::QuoteNode, df) = string(x.value)
 clean_column(x, df) = :(DataFrameMacros.stringargs($x, $df))
 clean_column(x::String, df) = x
 function clean_column(e::Expr, df)
-    stripped_e = if e.head == :$
-        e.args[1]
+    stripped_e = if e.head == :braces
+        only(e.args)
     else
         e
     end
