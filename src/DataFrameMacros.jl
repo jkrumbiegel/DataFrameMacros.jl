@@ -275,7 +275,9 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
 
     trans_expr = if formula_is_column
         if target_expr === nothing
-            :([$(stringified_columns...)])
+            quote
+                $(stringified_columns...)
+            end
         else
             :($(stringified_columns...) .=> $target_expr)
         end
