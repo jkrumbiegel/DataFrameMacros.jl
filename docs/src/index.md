@@ -57,10 +57,10 @@ show(result)
 
 These are the most important aspects that differ from other packages ([DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl) in particular):
 
-- All macros except `@combine` work **row-wise** by default. This reduces syntax complexity in most cases because no broadcasting is necessary. A flag macro (`@c` or `@r`) can be used to switch between row/column-based mode when needed.
+- All macros except `@combine` work **row-wise** by default. This reduces syntax complexity in most cases because no broadcasting is necessary. A modifier macro (`@colwise` or `@rowwise`) can be used to switch between row/column-based mode when needed.
 - `@groupby` and `@sort` allow using arbitrary expressions including multiple columns, without having to `@transform` first and repeat the new column names.
 - Column expressions are interpolated into the macro with `$`.
 - Keyword arguments to the macro-underlying functions work by separating them from column expressions with the `;` character.
 - Target column names are written with `:` symbols to avoid visual ambiguity (`:newcol = ...`). This also allows to use `AsTable` as a target like in DataFrames.jl.
-- The flag macro can also include the character `m` to switch on automatic `passmissing` in row-wise mode.
-- There is also a `@t` flag macro, which extracts every `:sym = expression` expression and collects the new symbols in a named tuple, while setting the target to `AsTable`.
+- The modifier macro can also include the character `m` to switch on automatic `passmissing` in row-wise mode.
+- There is also a `@astable` modifier macro, which extracts every `:sym = expression` expression and collects the new symbols in a named tuple, while setting the target to `AsTable`.

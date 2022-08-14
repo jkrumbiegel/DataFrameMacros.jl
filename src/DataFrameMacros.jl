@@ -713,11 +713,11 @@ end
 end)
 ```
 
-## Flag macros
+## Modifier macros
 
-You can modify the behavior of all macros using flag macros, which are not real macros but only signal changed behavior for a positional argument to the outer macro.
+You can modify the behavior of all macros using modifier macros, which are not real macros but only signal changed behavior for a positional argument to the outer macro.
 
-Each flag is specified with a single character, and you can combine these characters as well.
+Each modifier is specified with a single character, and you can combine these characters as well.
 The supported flags are:
 
 | character | meaning |
@@ -727,9 +727,9 @@ The supported flags are:
 | m | Wrap the function expression in `passmissing`. |
 | t | Collect all `:symbol = expression` expressions into a `NamedTuple` where `(; symbol = expression, ...)` and set the sink to `AsTable`. |
 
-### Example `@c`
+### Example `@colwise`
 
-To compute a centered column with `@transform`, you need access to the whole column at once and signal this with the `@c` flag.
+To compute a centered column with `@transform`, you need access to the whole column at once and signal this with the `@colwise` modifier.
 
 ```julia
 using Statistics
@@ -745,7 +745,7 @@ julia> df = DataFrame(x = 1:3)
    2 │     2
    3 │     3
 
-julia> @transform(df, :x_centered = @c :x .- mean(:x))
+julia> @transform(df, :x_centered = @colwise :x .- mean(:x))
 3×2 DataFrame
  Row │ x      x_centered 
      │ Int64  Float64    
@@ -755,10 +755,10 @@ julia> @transform(df, :x_centered = @c :x .- mean(:x))
    3 │     3         1.0
 ```
 
-### Example `@m`
+### Example `@passmissing`
 
 Many functions need to be wrapped in `passmissing` to correctly return `missing` if any input is `missing`.
-This can be achieved with the `@m` flag macro.
+This can be achieved with the `@passmissing` modifier macro.
 
 ```julia
 julia> df = DataFrame(name = ["alice", "bob", missing])
@@ -770,7 +770,7 @@ julia> df = DataFrame(name = ["alice", "bob", missing])
    2 │ bob
    3 │ missing 
 
-julia> @transform(df, :name_upper = @m uppercasefirst(:name))
+julia> @transform(df, :name_upper = @passmissing uppercasefirst(:name))
 3×2 DataFrame
  Row │ name     name_upper 
      │ String?  String?    
@@ -780,9 +780,9 @@ julia> @transform(df, :name_upper = @m uppercasefirst(:name))
    3 │ missing  missing    
 ```
 
-### Example `@t`
+### Example `@astable`
 
-In DataFrames, you can return a `NamedTuple` from a function and then automatically expand it into separate columns by using `AsTable` as the sink value. To simplify this process, you can use the `@t` flag macro, which collects all statements of the form `:symbol = expression` in the function body, collects them into a `NamedTuple`, and sets the sink argument to `AsTable`.
+In DataFrames, you can return a `NamedTuple` from a function and then automatically expand it into separate columns by using `AsTable` as the sink value. To simplify this process, you can use the `@astable` modifier macro, which collects all statements of the form `:symbol = expression` in the function body, collects them into a `NamedTuple`, and sets the sink argument to `AsTable`.
 
 ```julia
 julia> df = DataFrame(name = ["Alice Smith", "Bob Miller"])
@@ -793,7 +793,7 @@ julia> df = DataFrame(name = ["Alice Smith", "Bob Miller"])
    1 │ Alice Smith
    2 │ Bob Miller
 
-julia> @transform(df, @t begin
+julia> @transform(df, @astable begin
            s = split(:name)
            :first_name = s[1]
            :last_name = s[2]
@@ -806,10 +806,10 @@ julia> @transform(df, @t begin
    2 │ Bob Miller   Bob         Miller
 ```
 
-The `@t` flag also works with tuple destructuring syntax, so the previous example can be shortened to:
+The `@astable` modifier also works with tuple destructuring syntax, so the previous example can be shortened to:
 
 ```julia
-@transform(df, @t :first_name, :last_name = split(:name))
+@transform(df, @astable :first_name, :last_name = split(:name))
 ```
 
 """ DataFrameMacros
