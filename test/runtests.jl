@@ -51,11 +51,11 @@ using Test
     @test "a_myfunc" in names(df12)
     @test df12 == transform(df, :a => ByRow(myfunc))
 
-    df13 = @transform(df, :x = @c sum(:a) .+ :c)
+    df13 = @transform(df, :x = @colwise sum(:a) .+ :c)
     @test df13 == transform(df, [:a, :c] => ((x, y) -> sum(x) .+ y) => :x)
 
     df14 = DataFrame(a = ['a', 'b', missing])
-    df15 = @transform(df14, @m uppercase(:a))
+    df15 = @transform(df14, @passmissing uppercase(:a))
     # @test df15 == transform(df14, :a => ByRow(passmissing(uppercase)))
 end
 
@@ -71,7 +71,7 @@ end
     df3 = @combine(df, :x = sum(:a) + 3)
     @test df3 == combine(df, :a => (x -> sum(x) + 3) => :x)
 
-    df4 = @combine(df, :y = @r 3 * :a)
+    df4 = @combine(df, :y = @rowwise 3 * :a)
     @test df4 == combine(df, :a => ByRow(x -> 3 * x) => :y)
 end
 
@@ -182,9 +182,9 @@ end
     @test df2 == @transform(df, :c = :a + 1, :d = string(:b) ^ 2)
 end
 
-@testset "table shortcut @t" begin
+@testset "table shortcut @astable" begin
     df = DataFrame(a = 1:3, b = 4:6)
-    df2 = @transform(df, @t begin
+    df2 = @transform(df, @astable begin
         x = :a + :b
         :y = x * 2
         :z = x + 4
@@ -196,7 +196,7 @@ end
         (y = vary, z = varz)
     end) => AsTable)
 
-    df3 = @transform(df, @t begin
+    df3 = @transform(df, @astable begin
         if iseven(:a)
             :z = :a
         else
@@ -205,14 +205,14 @@ end
     end)
 
     # tuple destructuring
-    df4 = @transform(df, @t begin
+    df4 = @transform(df, @astable begin
         x = :a + :b
         :y, :z = x * 2, x + 4
     end)
     @test df4 == df2
 
     # tuple destructuring with non symbols mixed in
-    df5 = @transform(df, @t begin
+    df5 = @transform(df, @astable begin
         x = :a + :b
         :y, qqq, :z = x * 2, "hello", x + 4
     end)
@@ -229,7 +229,7 @@ module HygieneModule
         @test !(@isdefined ByRow)
         @test !(@isdefined passmissing)
         @test !(@isdefined transform)
-        @test @transform(df, :y = @m :x + 1) ==
+        @test @transform(df, :y = @passmissing :x + 1) ==
             DataFrames.transform(df, :x => DataFrames.ByRow(DataFrames.passmissing(x -> x + 1)) => :y)
     end
 end
@@ -267,7 +267,7 @@ end
     @test df5.y == [1, 3, 3, 2]
 
     df = DataFrame(x = 1:4, y = [1, 1, 2, 2])
-    df6 = @transform! df @subset(:y == 2) @t begin
+    df6 = @transform! df @subset(:y == 2) @astable begin
         :x = 6
         :y = 7
         :z = 8
@@ -280,7 +280,7 @@ end
 @testset "@transform! with @subset with grouped dataframes" begin
     df = DataFrame(id = [1, 1, 1, 2, 2, 2], val = [0, 1, 3, 1, 2, 3])
     gdf = groupby(df, :id)
-    df2 = @transform!(gdf, @subset(:val != 3), :newval = @c maximum(:val))
+    df2 = @transform!(gdf, @subset(:val != 3), :newval = @colwise maximum(:val))
 
     @test isequal(
         df,
@@ -301,7 +301,7 @@ end
     @test @select(df, {Between(1, 3)} + 1) == select(df, Between(1, 3) .=> ByRow(x -> x + 1))
     @test @select(df, {Not(2)} + 1) == select(df, Not(2) .=> ByRow(x -> x + 1))
 
-    @test @transform(df, ["c", "d"] = @c sum({Not(2)})) ==
+    @test @transform(df, ["c", "d"] = @colwise sum({Not(2)})) ==
         transform(df, Not(2) .=> sum .=> ["c", "d"])
 
     @test @select(df, {r"a"}) == select(df, names(df, r"a"))
@@ -328,3 +328,4 @@ end
     df4 = @select(df, "{}_plus_$x" = {All()} + x)
     @test df4 == DataFrame(a_plus_5 = df.a .+ 5, b_plus_5 = df.b .+ 5)
 end
+
