@@ -23,7 +23,7 @@ using Test
 
     col1 = :a
     col2 = :c
-    df6 = @transform(df, :d = $col1 + $col2 * :a)
+    df6 = @transform(df, :d = {col1} + {col2} * :a)
     @test df6 == transform(df, [col1, col2, :a] => ByRow((x, y, z) -> x + y * z) => :d)
 
     s = "d"
@@ -121,7 +121,7 @@ end
 
 @testset "string and int column specification" begin
     df = DataFrame([Symbol("a column") => [1, 2, 3], :b => [4, 5, 6]])
-    df2 = @transform(df, :c = $"a column" * $2)
+    df2 = @transform(df, :c = {"a column"} * {2})
     #"
     @test df2 == transform(df, ["a column", names(df)[2]] => ByRow(*) => :c)
 end
@@ -295,23 +295,23 @@ end
 
 @testset "multiple columns" begin
     df = DataFrame(a = 1:3, aa = 4:6, b = 7:9)
-    df2 = @select(df, All() = Float32(All()))
+    df2 = @select(df, {All()} = Float32({All()}))
     @test df2 == select(df, names(df, All()) .=> ByRow(Float32) .=> names(df, All()))
 
-    @test @select(df, Between(1, 3) + 1) == select(df, Between(1, 3) .=> ByRow(x -> x + 1))
-    @test @select(df, Not(2) + 1) == select(df, Not(2) .=> ByRow(x -> x + 1))
+    @test @select(df, {Between(1, 3)} + 1) == select(df, Between(1, 3) .=> ByRow(x -> x + 1))
+    @test @select(df, {Not(2)} + 1) == select(df, Not(2) .=> ByRow(x -> x + 1))
 
-    @test @transform(df, ["c", "d"] = @c sum(Not(2))) ==
+    @test @transform(df, ["c", "d"] = @c sum({Not(2)})) ==
         transform(df, Not(2) .=> sum .=> ["c", "d"])
 
-    @test @select(df, $(r"a")) == select(df, names(df, r"a"))
-    df3 = @transform(df, ["x", "y"] = $(r"a") + 1)
+    @test @select(df, {r"a"}) == select(df, names(df, r"a"))
+    df3 = @transform(df, ["x", "y"] = {r"a"} + 1)
     @test df3 == transform(df, names(df, r"a") .=> ByRow(x -> x + 1) .=> ["x", "y"])
 
-    df4 = @select(df, $(1:3) + $((1:3)'))
+    df4 = @select(df, {1:3} + {(1:3)'})
     @test df4 == select(df, vcat.(1:3, (1:3)') .=> +)
 
-    df5 = @select(df, :a + $(1:3))
+    df5 = @select(df, :a + {1:3})
     @test df5 == select(df, vcat.("a", names(df, 1:3)) .=> +)
 end
 
@@ -321,10 +321,10 @@ end
     df2 = @select(df, "{1}_plus_{2}" = :a + :b)
     @test df2 == DataFrame(a_plus_b = df.a .+ df.b)
 
-    df3 = @select(df, "sqrt_of_{}" = sqrt(All()))
+    df3 = @select(df, "sqrt_of_{}" = sqrt({All()}))
     @test df3 == DataFrame(sqrt_of_a = sqrt.(df.a), sqrt_of_b = sqrt.(df.b))
 
     x = 5
-    df4 = @select(df, "{}_plus_$x" = All() + x)
+    df4 = @select(df, "{}_plus_$x" = {All()} + x)
     @test df4 == DataFrame(a_plus_5 = df.a .+ 5, b_plus_5 = df.b .+ 5)
 end
