@@ -232,11 +232,11 @@ convert_source_funk_sink_expr(f, x, df) = x
 
 function convert_source_funk_sink_expr(f, e::Expr, df)
     target, formula = split_formula(e)
-    flags, formula = extract_macro_flags(formula)
+    mod_macros, formula = extract_modification_macros(formula)
 
-    if 't' in flags
+    if :astable in mod_macros
         if target !== nothing
-            error("There should be no target expression when the @t flag is used. The implicit target is `AsTable`. Target received was $target")
+            error("There should be no target expression when the @astable macro is used. The implicit target is `AsTable`. Target received was $target")
         end
         target_expr = AsTable
         formula = convert_automatic_astable_formula(formula)
@@ -257,18 +257,16 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
             esc(stringarg_expr(c, df)) for (i, c) in enumerate(clean_columns)
     ]
 
-    byrow = (defaultbyrow(f) && !('c' in flags)) ||
-        (!defaultbyrow(f) && ('r' in flags))
+    byrow = (defaultbyrow(f) && !(:colwise in mod_macros)) ||
+        (!defaultbyrow(f) && (:rowwise in mod_macros))
 
-    pass_missing = 'm' in flags
+    pass_missing = :passmissing in mod_macros
 
     func_esc = esc(func)
 
     if pass_missing
         func_esc = :(passmissing($func_esc))
     end
-
-    # func_esc = byrow ? :(ByRow($func_esc)) : :($func_esc)
 
     trans_expr = if formula_is_column
         if target_expr === nothing
@@ -472,15 +470,21 @@ end
 
 flagchars = "crmt"
 
-extract_macro_flags(x) = "", x
+extract_modification_macros(x) = "", x
 
-function extract_macro_flags(e::Expr)
-    if e.head == :macrocall && all(char -> occursin(char, flagchars), string(e.args[1])[2:end]) &&
-            length(e.args) == 3
-        string(e.args[1])[2:end], e.args[3] 
+function extract_modification_macros(e::Expr, set = Set{Symbol}())
+    if @capture e @passmissing x_
+        push!(set, :passmissing)
+    elseif @capture e @rowwise x_
+        push!(set, :rowwise)
+    elseif @capture e @colwise x_
+        push!(set, :colwise)
+    elseif @capture e @astable x_
+        push!(set, :astable)
     else
-        "", e
+        return set, e
     end
+    return extract_modification_macros(x, set)
 end
 
 is_dot_quotenode_expr(x) = false
