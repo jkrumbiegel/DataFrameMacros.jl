@@ -2,6 +2,7 @@ module DataFrameMacros
 
 using Base: ident_cmp
 using DataFrames: DataFrames, transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame, GroupedDataFrame
+using MacroTools: @capture
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 
@@ -246,9 +247,18 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
     formula_is_column = is_column_expr(formula)
 
     columns = gather_columns(formula)
+    # @show columns
+    multicols = map(is_multicolumn_expr, columns)
     func, columns = make_function_expr(formula, columns)
+    # @show func
+    # @show columns
     clean_columns = map(c -> clean_column(c, df), columns)
-    stringified_columns = [esc(stringarg_expr(c, df)) for c in clean_columns]
+    # @show clean_columns
+    stringified_columns = [
+        multicols[i] ?
+            esc(:(Ref($(stringarg_expr(c, df))))) :
+            esc(stringarg_expr(c, df)) for (i, c) in enumerate(clean_columns)
+    ]
 
     byrow = (defaultbyrow(f) && !('c' in flags)) ||
         (!defaultbyrow(f) && ('r' in flags))
@@ -261,20 +271,66 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         func_esc = :(passmissing($func_esc))
     end
 
-    func_esc = byrow ? :(ByRow($func_esc)) : :($func_esc)
+    # func_esc = byrow ? :(ByRow($func_esc)) : :($func_esc)
 
-    trans_expr = if target_expr === nothing
-        if formula_is_column
-            :($(stringified_columns...) .=> $(stringified_columns...))
+    trans_expr = if formula_is_column
+        if target_expr === nothing
+            :([$(stringified_columns...)])
         else
-            :($(esc(vcat)).($(stringified_columns...)) .=> $func_esc)
+            :($(stringified_columns...) .=> $target_expr)
         end
     else
-        if formula_is_column
-            :($(stringified_columns...) .=> $target_expr)
-        else
-            :($(esc(vcat)).($(stringified_columns...)) .=> $func_esc .=> $target_expr)
+        quote
+            sc = [$(stringified_columns...)]
+            arglength_tuple = Tuple(map(sc) do c
+                c isa Ref && return Val(length(c[]))
+                return nothing
+            end)
+
+            f = $func_esc
+            g = makefunc(f, arglength_tuple)
+
+            h = $(byrow ? :(ByRow(g)) : :(g))
+
+            if $(target_expr === nothing)
+                $(esc(vcat)).($(stringified_columns...)) .=> h
+            else
+                $(esc(vcat)).($(stringified_columns...)) .=> h .=> $target_expr
+            end
         end
+    end
+end
+
+function makefunc(f, arglength_tuple)
+    function (args...)
+        # @show args
+        collated_args = collate_tuple(arglength_tuple, args)
+        # @show collated_args
+        f(collated_args...)
+    end
+end
+
+@generated function collate_tuple(arglength_tuple, args)
+
+    cardinality(::Type{<:Val{I}}) where I = I
+    cardinality(::Type{Nothing}) = 1
+
+    get_argtypes(x::Type{<:T}) where T<:Tuple = fieldtypes(T)
+    argtypes = get_argtypes(arglength_tuple)
+    cardinalities = map(cardinality, argtypes)
+    
+    offsets = 1 .+ [0; cumsum(cardinalities)...]
+
+    exprs = map(argtypes, offsets) do al, offset
+        if al <: Val
+            :(args[$(offset:offset-1+cardinality(al))])
+        else
+            :(args[$offset])
+        end
+    end
+
+    quote
+        tuple($(exprs...))
     end
 end
 
@@ -396,7 +452,7 @@ function gather_columns(x; unique = true)
 end
 
 function gather_columns!(columns, x; unique)
-    if is_column_expr(x)
+    if is_column_expr(x) || is_multicolumn_expr(x)
         if !unique || x ∉ columns
             push!(columns, x)
         end
@@ -437,9 +493,10 @@ end
 
 is_column_expr(q::QuoteNode) = true
 is_column_expr(x) = false
-function is_column_expr(e::Expr)
-    e.head == :call && e.args[1] in (:Not, :Between, :All) || e.head == :braces
-end
+is_column_expr(e::Expr) = !is_multicolumn_expr(e) && @capture(e, {_})
+
+is_multicolumn_expr(x) = false
+is_multicolumn_expr(e::Expr) = @capture e {{_}}
 
 function make_function_expr(formula, columns)
     is_simple, symbol = is_simple_function_call(formula, columns)
@@ -478,11 +535,7 @@ clean_column(x::QuoteNode, df) = string(x.value)
 clean_column(x, df) = :(DataFrameMacros.stringargs($x, $df))
 clean_column(x::String, df) = x
 function clean_column(e::Expr, df)
-    stripped_e = if e.head == :braces
-        only(e.args)
-    else
-        e
-    end
+    @capture(e, {{x_}}) ? x : @capture(e, {x_}) ? x : e
 end
 
 stringargs(x, df) = names(df, x)
