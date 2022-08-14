@@ -55,13 +55,13 @@ Let's use the `@transform` macro this time, which appends new columns to an exis
 
 This command fails because some passengers have no age recorded, and the ternary operator `... ? ... : ...` (a shortcut for `if ... then ... else ...`) cannot operate on `missing` values.
 
-## The @m `passmissing` flag macro
+## The @passmissing modifier macro
 
 One option is to remove the missing values beforehand, but then we would have to delete rows from the dataset.
-A simple option to make the expression pass through missing values, is by using the special flag macro `@m`.
+A simple option to make the expression pass through missing values, is by using the special modifier macro `@passmissing`.
 
 ```@repl 1
-@transform(df, :type = @m :Age >= 18 ? "adult" : "child")
+@transform(df, :type = @passmissing :Age >= 18 ? "adult" : "child")
 ```
 
 This is equivalent to a DataFrames construct, in which the function is wrapped in `passmissing`:
@@ -74,10 +74,10 @@ This way, if any input argument is `missing`, the function returns `missing`, to
 
 ## @subset
 
-To retain only rows that fulfill certain conditions, you can use the `@subset` macro. For this macro it does not make sense to specify sink column names, because derived columns do not appear in the result. If there are `missing` values, you can use the `@m` flag to pass them through the boolean condition, and add the keyword argument `skipmissing = true` which the underlying `subset` function requires to remove such rows.
+To retain only rows that fulfill certain conditions, you can use the `@subset` macro. For this macro it does not make sense to specify sink column names, because derived columns do not appear in the result. If there are `missing` values, you can use the `@passmissing` modifier to pass them through the boolean condition, and add the keyword argument `skipmissing = true` which the underlying `subset` function requires to remove such rows.
 
 ```@repl 1
-@subset(df, @m startswith(:Name, "M") && :Age > 50; skipmissing = true)
+@subset(df, @passmissing startswith(:Name, "M") && :Age > 50; skipmissing = true)
 ```
 
 ## @groupby
@@ -136,27 +136,27 @@ end
 
 Here you could also see the `@sort` macro, which is useful when you want to sort by values that are derived from different columns, but which you don't want to include in the DataFrame.
 
-## The @c flag macro
+## The @colwise modifier macro
 
 Some `@transform` or `@select` calls require access to whole columns at once.
 One scenario is computing a z-score.
-Because `@transform` and `@select` work **by-row** by default, you need to add the `@c` flag macro to signal that you want to work **by-column**.
+Because `@transform` and `@select` work **by-row** by default, you need to add the `@colwise` modifier macro to signal that you want to work **by-column**.
 This is exactly the opposite from DataFrames, where you work **by-column** by default and signal by-row behavior with the `ByRow` wrapper.
 
 ```@repl 1
 @select(
     dropmissing(df, :Age),
-    :age_z = @c (:Age .- mean(:Age)) ./ std(:Age))
+    :age_z = @colwise (:Age .- mean(:Age)) ./ std(:Age))
 ```
 
-## The @t flag macro
+## The @astable modifier macro
 
 If a computation should return multiple different columns, DataFrames allows you to do this by returning a `NamedTuple` and setting the sink argument to `AsTable`.
-To streamline this process you can use the `@t` flag macro.
+To streamline this process you can use the `@astable` modifier macro.
 It signals that all `:symbol = expression` expressions that are found are rewritten so that a `NamedTuple` like `(symbol = expression, symbol2...)` is returned and the sink argument is set to `AsTable`.
 
 ```@repl 1
-@select(df, @t begin
+@select(df, @astable begin
     nameparts = split(:Name, r"[\s,]+")
     :title = nameparts[2]
     :first_name = nameparts[3]
@@ -164,11 +164,11 @@ It signals that all `:symbol = expression` expressions that are found are rewrit
 end)
 ```
 
-You can also use tuple destructuring syntax with the `@t` macro.
+You can also use tuple destructuring syntax with the `@astable` macro.
 This can often make assignments of multiple columns even more terse:
 
 ```@repl 1
-@select(df, @t begin
+@select(df, @astable begin
     :last_name, :title, :first_name, rest... = split(:Name, r"[\s,]+")
 end)
 ```
@@ -183,19 +183,19 @@ You can use one multi-column specifier together in one expression with as many s
 Let's say we wanted to round and convert to Integer the two columns `Age` and `Fare`.
 We can just make a vector of these two column names and apply the same function on this multi-column specifier.
 We have to mark it as a column specifier with the `$` operator.
-We also add `@m` to pass through the missing values in the `Age` column:
+We also add `@passmissing` to pass through the missing values in the `Age` column:
 
 ```@repl 1
-@select(df, @m round(Int, $[:Age, :Fare]))
+@select(df, @passmissing round(Int, $[:Age, :Fare]))
 ```
 
-We could of course also put the vector in a variable `columns` and then apply `@select(df, @m round(Int, $columns))` for legibility.
+We could of course also put the vector in a variable `columns` and then apply `@select(df, @passmissing round(Int, $columns))` for legibility.
 
 You can see that the operation worked as intended, but this resulted in ugly column names.
 If we want to specify column names, we can for example pass a vector of names before the `=` sign:
 
 ```@repl 1
-@select(df, ["AgeInt", "FareInt"] = @m round(Int, $[:Age, :Fare]))
+@select(df, ["AgeInt", "FareInt"] = @passmissing round(Int, $[:Age, :Fare]))
 ```
 
 But here we had to repeat `Age` and `Fare` manually, if we had more columns this could get tedious quickly.
@@ -203,7 +203,7 @@ Another option is to pass a renamer function, this takes in a vector of all colu
 Note that this receives `["Age"]` in one call and `["Fare"]` in the other, not both together.
 
 ```@repl 1
-@select(df, (cols -> cols[1] * "Int") = @m round(Int, $[:Age, :Fare]))
+@select(df, (cols -> cols[1] * "Int") = @passmissing round(Int, $[:Age, :Fare]))
 ```
 
 This is flexible but a little bit more verbose than we would like.
@@ -214,7 +214,7 @@ You can pass a string literal that contains at least one pair of `{}` and this w
 This shortens the example to:
 
 ```@repl 1
-@select(df, "{}Int" = @m round(Int, $[:Age, :Fare]))
+@select(df, "{}Int" = @passmissing round(Int, $[:Age, :Fare]))
 ```
 
 If there are multiple columns in one expression, you can reference them with numbers in the brackets, `"{}"` is equivalent to `"{1}"`, then comes `"{2}"` for the second column and so on.
