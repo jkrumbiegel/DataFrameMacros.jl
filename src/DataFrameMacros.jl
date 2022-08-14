@@ -304,6 +304,8 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
 end
 
 function makefunc(f, arglength_tuple)
+    # if no vals return f so function name determination works
+    all(x -> x === nothing, arglength_tuple) && return f
     function (args...)
         # @show args
         collated_args = collate_tuple(arglength_tuple, args)
