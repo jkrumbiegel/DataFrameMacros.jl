@@ -247,13 +247,10 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
     formula_is_column = is_column_expr(formula)
 
     columns = gather_columns(formula)
-    # @show columns
-    multicols = map(is_multicolumn_expr, columns)
     func, columns = make_function_expr(formula, columns)
-    # @show func
-    # @show columns
+    multicols = map(is_multicolumn_expr, columns)
+
     clean_columns = map(c -> clean_column(c, df), columns)
-    # @show clean_columns
     stringified_columns = [
         multicols[i] ?
             esc(:(Ref($(stringarg_expr(c, df))))) :
