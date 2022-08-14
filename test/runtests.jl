@@ -329,3 +329,10 @@ end
     @test df4 == DataFrame(a_plus_5 = df.a .+ 5, b_plus_5 = df.b .+ 5)
 end
 
+@testset "double brace syntax" begin
+    df = DataFrame(a = 1:3, b = 4:6, c = 7:9)
+    @test @select(df, :d = maximum({{All()}})) == @select(df, :d = maximum([:a, :b, :c]))
+    @test @select(df, :d = maximum({{Not(:a)}})) == @select(df, :d = maximum([:b, :c]))
+    @test @select(df, :d = @colwise sum({{r"[bc]"}})) == @select(df, :d = @colwise sum((:b, :c)))
+    @test @select(df, :d = :a < maximum({{[:b, :c]}})) == @select(df, :d = :a < maximum((:b, :c)))
+end
