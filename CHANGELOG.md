@@ -1,3 +1,10 @@
+## v0.3.0
+
+- **Breaking**: The `$()` interpolation syntax is replaced by `{}` for single columns (or broadcasted multi-columns)
+- Added `{{}}` for referring to multiple columns as a tuple.
+- **Breaking**: No more flag macros, replaced by explit `@byrow`, `@bycol`, `@passmissing`, `@astable`.
+- **Breaking**: `All()`, `Between()` and `Not()` have to be interpolated with `{}` and can't be used standalone anymore.
+
 ## v0.2.1
 
 - Added ability to use multi-column expressions with `All()`, `Between()`, `Not()`, as well as any other multi-column identifier such as `$Real` for all columns of eltype `Real`.
