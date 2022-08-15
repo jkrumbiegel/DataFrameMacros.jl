@@ -1,6 +1,6 @@
 # DataFrameMacros.jl
 
-[Read the docs at https://jkrumbiegel.github.io/DataFrameMacros.jl/stable.](https://jkrumbiegel.github.io/DataFrameMacros.jl/stable)
+Read the docs at [https://jkrumbiegel.github.io/DataFrameMacros.jl/stable.](https://jkrumbiegel.github.io/DataFrameMacros.jl/stable)
 
 ## Summary
 
