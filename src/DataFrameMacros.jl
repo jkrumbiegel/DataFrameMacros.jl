@@ -639,7 +639,7 @@ All macros have signatures of the form:
 
 Each positional argument in `args` is converted to a `source .=> function .=> sink` expression for the transformation mini-language of DataFrames.
 By default, all macros execute the given function **by-row**, only `@combine` executes **by-column**.
-There is automatic broadcasting across all column specifiers, so it is possible to directly use multi-column specifiers such as `All()`, `Not(:x)`, `r"columnname"` and `startswith("prefix")`.
+There is automatic broadcasting across all column specifiers, so it is possible to directly use multi-column specifiers such as `{All()}`, `{Not(:x)}`, `{r"columnname"}` and `{startswith("prefix")}`.
 
 For example, the following pairs of expressions are equivalent:
 
@@ -648,7 +648,7 @@ transform(df, :x .=> ByRow(x -> x + 1) .=> :y)
 @transform(df, :y = :x + 1)
 
 select(df, names(df, All()) .=> ByRow(x -> x ^ 2))
-@select(df, \$(All()) ^ 2)
+@select(df, {All()} ^ 2)
 
 combine(df, :x .=> (x -> sum(x) / 5) .=> :result)
 @combine(df, :result = sum(:x) / 5)
@@ -658,8 +658,8 @@ combine(df, :x .=> (x -> sum(x) / 5) .=> :result)
 
 Each positional argument must be of the form `[sink =] some_expression`.
 Columns can be referenced within `sink` or `some_expression` using a `Symbol`, a `String`, or an `Int`.
-Any column identifier that is not a `Symbol` or one of the multicolumn selectors `All()`, `Between()` and `Not()` must be prefaced with the interpolation symbol `\$`.
-The `\$` interpolation symbol also allows to use variables or expressions that evaluate to column identifiers.
+Any column identifier that is not a `Symbol` must be wrapped with `{}`.
+Wrapping with `{}` also allows to use variables or expressions that evaluate to column identifiers.
 
 The five expressions in the following code block are equivalent.
 
@@ -670,31 +670,34 @@ using DataFrameMacros
 df = DataFrame(x = 1:3)
 
 @transform(df, :y = :x + 1)
-@transform(df, :y = \$"x" + 1)
-@transform(df, :y = \$1 + 1)
+@transform(df, :y = {"x"} + 1)
+@transform(df, :y = {1} + 1)
 col = :x
-@transform(df, :y = \$col + 1)
+@transform(df, :y = {col} + 1)
 cols = [:x, :y, :z]
-@transform(df, :y = \$(cols[1]) + 1)
+@transform(df, :y = {cols[1]} + 1)
 ```
 
 ### Multi-column references
 
 You can also use multi-column specifiers.
-For example `@select(df, sqrt(Between(2, 4)))` acts as if the function `sqrt` is applied along each column that belongs to the group selected by `Between(2, 4)`.
+For example `@select(df, sqrt({Between(2, 4)}))` acts as if the function `sqrt` is applied along each column that belongs to the group selected by `Between(2, 4)`.
 Because the source-function-sink complex is connected by broadcasted pairs like `source .=> function .=> sink`, you can use multi-column specifiers together with single-column specifiers in the same expression.
-For example, `@select(df, All() + :x)` would compute `df.some_column + df.x` for each column in the DataFrame `df`.
+For example, `@select(df, {All()} + :x)` would compute `df.some_column + df.x` for each column in the DataFrame `df`.
+
+If you use `{{}}`, the multi-column expression is not broadcast, but given as a tuple so you can aggregate over it.
+For example `sum({{All()}}` calculates the sum of all columns once, while `sum({All()})` would apply `sum` to each column separately.
 
 ### Sink names in multi-column scenarios
 
 For most complex function expressions, DataFrames concatenates all names of the columns that you used to create a new sink column name, which looks like `col1_col2_function`.
-It's common that you want to use a different naming scheme, but you can't write `@select(df, :x = All() + 1)` because then every new column would be named `x` and that is disallowed.
+It's common that you want to use a different naming scheme, but you can't write `@select(df, :x = {All()} + 1)` because then every new column would be named `x` and that is disallowed.
 There are several options to deal with the problem of multiple new columns:
 
-- You can use a Vector of strings such as `["x", "y", "z"] = sqrt(All())`, the length has to match the number of columns in the multi-column specifier. This is the most direct way to specify multiple names, but it doesn't leverage the names of the used columns dynamically.
-- You can reference existing column names and modify them somehow, like `"sqrt_of_" .* All()) = sqrt(All())`. Note that column specifiers on the left-hand side of the `=` operator like `All()` are resolved to a Vector of column names, not to the content of the columns like on the right-hand side. This requires you to repeat selectors, though.
-- You can use a function that takes in a vector of column names (even if there's just one) and outputs a new column name, like `(cols -> uppercase(cols[1])) = sqrt(All())`.
-- You can use DataFrameMacro's string shortcut syntax. If there's a string literal with one or more {} brackets, it's treated as an anonymous function that takes in column names and splices them into the string. `{}` is equivalent to `{1}`, but you can access further names with `{2}` and so on, if there is more than one column used in the function. In the example above, you could rename all columns with `@select(df, "sqrt_of_{}" = sqrt(All()))`.
+- You can use a Vector of strings such as `["x", "y", "z"] = sqrt({All()})`, the length has to match the number of columns in the multi-column specifier. This is the most direct way to specify multiple names, but it doesn't leverage the names of the used columns dynamically.
+- You can reference existing column names and modify them somehow, like `"sqrt_of_" .* {All()}) = sqrt({All()})`. Note that column specifiers on the left-hand side of the `=` operator like `{All()}` are resolved to a Vector of column names, not to the content of the columns like on the right-hand side. This requires you to repeat selectors, though.
+- You can use a function that takes in a vector of column names (even if there's just one) and outputs a new column name, like `(cols -> uppercase(cols[1])) = sqrt({All()})`.
+- You can use DataFrameMacro's string shortcut syntax. If there's a string literal with one or more {} brackets, it's treated as an anonymous function that takes in column names and splices them into the string. `{}` is equivalent to `{1}`, but you can access further names with `{2}` and so on, if there is more than one column used in the function. In the example above, you could rename all columns with `@select(df, "sqrt_of_{}" = sqrt({All()}))`.
 
 ## Passing multiple expressions
 
