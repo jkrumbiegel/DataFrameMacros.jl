@@ -9,6 +9,15 @@ Each macro translates expressions into the more verbose `source => function => s
 
 ## Example
 
+The following macros are currently available:
+- `@transform` / `@transform!`
+- `@select` / `@select!`
+- `@groupby`
+- `@combine`
+- `@subset` / `@subset!`
+- `@sort` / `@sort!`
+- `@unique`
+
 Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
 
 ```julia
@@ -44,18 +53,3 @@ end
    3 │     false  b       22.097
    4 │      true  b       22.9701
 ```
-
-Unlike DataFrames.jl, most operations are **row-wise** by default but you can switch to column-wise on demand using the `@bycol` modifier macro.
-This often results in cleaner code that's easier to understand and reason about, especially when string or object manipulation is involved.
-Such operations often don't have a clean broadcasting syntax, for example, `somestring[2]` is easier to read than `getindex.(somestrings, 2)`.
-The same is true for `someobject.property` and `getproperty.(someobjects, :property)`.
-
-The following macros are currently available:
-- `@transform` / `@transform!`
-- `@select` / `@select!`
-- `@groupby`
-- `@combine`
-- `@subset` / `@subset!`
-- `@sort` / `@sort!`
-- `@unique`
-
