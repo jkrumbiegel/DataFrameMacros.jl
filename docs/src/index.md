@@ -142,6 +142,8 @@ end)
 
 ## `{{}}` syntax
 
+The double brace syntax refers to multiple columns as a tuple, which means that you can aggregate over a larger number of columns than it would be practical to write out explicitly.
+
 ```@repl
 using DataFrames
 using DataFrameMacros
