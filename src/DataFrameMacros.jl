@@ -28,7 +28,7 @@ for f in funcsymbols
         """
             @$($f)(df, args...; kwargs...)
 
-        The `@$($f)` macro builds a `DataFrames.$($f)` call. Each expression in `args` is converted to a `src => function => sink` construct that conforms to the transformation mini-language of DataFrames.
+        The `@$($f)` macro builds a `DataFrames.$($f)` call. Each expression in `args` is converted to a `src .=> function . => sink` construct that conforms to the transformation mini-language of DataFrames.
 
         Keyword arguments `kwargs` are passed down to `$($f)` but have to be separated from the positional arguments by a semicolon `;`.
 
@@ -257,8 +257,8 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
             esc(stringarg_expr(c, df)) for (i, c) in enumerate(clean_columns)
     ]
 
-    byrow = (defaultbyrow(f) && !(:colwise in mod_macros)) ||
-        (!defaultbyrow(f) && (:rowwise in mod_macros))
+    byrow = (defaultbyrow(f) && !(:bycol in mod_macros)) ||
+        (!defaultbyrow(f) && (:byrow in mod_macros))
 
     pass_missing = :passmissing in mod_macros
 
@@ -475,10 +475,10 @@ extract_modification_macros(x) = "", x
 function extract_modification_macros(e::Expr, set = Set{Symbol}())
     if @capture e @passmissing x_
         push!(set, :passmissing)
-    elseif @capture e @rowwise x_
-        push!(set, :rowwise)
-    elseif @capture e @colwise x_
-        push!(set, :colwise)
+    elseif @capture e @byrow x_
+        push!(set, :byrow)
+    elseif @capture e @bycol x_
+        push!(set, :bycol)
     elseif @capture e @astable x_
         push!(set, :astable)
     else
@@ -629,7 +629,7 @@ end
 
 
 @doc """
-DataFrameMacros offers macros which transform expressions for DataFrames functions that use the `source => function => sink` mini-language.
+DataFrameMacros offers macros which transform expressions for DataFrames functions that use the `source .=> function .=> sink` mini-language.
 The supported functions are `@transform`/`@transform!`, `@select/@select!`, `@groupby`, `@combine`, `@subset`/`@subset!`, `@sort`/`@sort!` and `@unique`.
 
 All macros have signatures of the form:
@@ -727,9 +727,9 @@ The supported flags are:
 | m | Wrap the function expression in `passmissing`. |
 | t | Collect all `:symbol = expression` expressions into a `NamedTuple` where `(; symbol = expression, ...)` and set the sink to `AsTable`. |
 
-### Example `@colwise`
+### Example `@bycol`
 
-To compute a centered column with `@transform`, you need access to the whole column at once and signal this with the `@colwise` modifier.
+To compute a centered column with `@transform`, you need access to the whole column at once and signal this with the `@bycol` modifier.
 
 ```julia
 using Statistics
@@ -745,7 +745,7 @@ julia> df = DataFrame(x = 1:3)
    2 │     2
    3 │     3
 
-julia> @transform(df, :x_centered = @colwise :x .- mean(:x))
+julia> @transform(df, :x_centered = @bycol :x .- mean(:x))
 3×2 DataFrame
  Row │ x      x_centered 
      │ Int64  Float64    

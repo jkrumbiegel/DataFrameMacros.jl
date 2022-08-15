@@ -45,7 +45,7 @@ end
    4 │      true  b       22.9701
 ```
 
-Unlike DataFrames.jl, most operations are **row-wise** by default but you can switch to column-wise on demand using the `@colwise` modifier macro.
+Unlike DataFrames.jl, most operations are **row-wise** by default but you can switch to column-wise on demand using the `@bycol` modifier macro.
 This often results in cleaner code that's easier to understand and reason about, especially when string or object manipulation is involved.
 Such operations often don't have a clean broadcasting syntax, for example, `somestring[2]` is easier to read than `getindex.(somestrings, 2)`.
 The same is true for `someobject.property` and `getproperty.(someobjects, :property)`.

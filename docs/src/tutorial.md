@@ -136,17 +136,17 @@ end
 
 Here you could also see the `@sort` macro, which is useful when you want to sort by values that are derived from different columns, but which you don't want to include in the DataFrame.
 
-## The @colwise modifier macro
+## The @bycol modifier macro
 
 Some `@transform` or `@select` calls require access to whole columns at once.
 One scenario is computing a z-score.
-Because `@transform` and `@select` work **by-row** by default, you need to add the `@colwise` modifier macro to signal that you want to work **by-column**.
+Because `@transform` and `@select` work **by-row** by default, you need to add the `@bycol` modifier macro to signal that you want to work **by-column**.
 This is exactly the opposite from DataFrames, where you work **by-column** by default and signal by-row behavior with the `ByRow` wrapper.
 
 ```@repl 1
 @select(
     dropmissing(df, :Age),
-    :age_z = @colwise (:Age .- mean(:Age)) ./ std(:Age))
+    :age_z = @bycol (:Age .- mean(:Age)) ./ std(:Age))
 ```
 
 ## The @astable modifier macro
