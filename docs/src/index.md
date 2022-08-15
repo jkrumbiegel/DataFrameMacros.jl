@@ -1,21 +1,7 @@
 # DataFrameMacros.jl
 
-DataFrameMacros.jl offers macros for DataFrame manipulation with a syntax geared towards clarity, brevity and convenience.
-Each macro translates expressions into the more verbose `source => function => sink` mini-language from [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl).
-
-Here is a simple example:
-
-```@repl
-using DataFrameMacros, DataFrames
-df = DataFrame(name = ["Mary Louise Parker", "Thomas John Fisher"])
-
-result = @transform(df, :middle_initial = split(:name)[2][1] * ".")
-```
-
-Unlike DataFrames.jl, most operations are **row-wise** by default.
-This often results in cleaner code that's easier to understand and reason about, especially when string or object manipulation is involved.
-Such operations often don't have a clean broadcasting syntax, for example, `somestring[2]` is easier to read than `getindex.(somestrings, 2)`.
-The same is true for `someobject.property` and `getproperty.(someobjects, :property)`.
+DataFrameMacros.jl offers macros for manipulating DataFrames with a syntax geared towards clarity, brevity and convenience.
+Each macro translates expressions into the `source .=> function .=> sink` mini-language from [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl).
 
 The following macros are currently available:
 - `@transform` / `@transform!`
@@ -26,41 +12,110 @@ The following macros are currently available:
 - `@sort` / `@sort!`
 - `@unique`
 
-Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
+## Differences to ([DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
 
-```@example
-using DataFrameMacros
+- Except `@combine`, all macros work row-wise by default in DataFrameMacros.jl
+- DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`.
+- You can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use `rtransform` or `transform`.
+- In DataFrameMacros.jl, you can apply the same expression to several columns at once and even broadcast across multiple sets of columns.
+- In DataFrameMacros.jl, you can use special multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregate across columns.
+
+# Examples
+
+## `@select`
+
+```@repl
 using DataFrames
-using Chain
-using Random
+using DataFrameMacros
 using Statistics
+
+df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
+
+@select(df, :a)
+@select(df, :a, :b)
+@select(df, :A = :a, :B = :b)
+@select(df, :a + 1)
+@select(df, :a_plus_one = :a + 1)
+@select(df, {[:a, :b]} / 2)
+@select(df, sqrt({Not(:b)}))
+@select(df, 5 * {All()})
+@select(df, {Between(1, 2)} - {Between(2, 3)})
+@select(df, "{1}_plus_{2}" = {Between(1, 2)} + {Between(2, 3)})
+@select(df, @bycol :a .- :b)
+@select(df, :d = @bycol :a .+ 1)
+@select(df, "a_minus_{2}" = :a - {[:b, :c]})
+@select(df, "{1}_minus_{2}" = {[:a, :b, :c]} - {[:a, :b, :c]'})
+@select(df, :a + mean({{[:b, :c]}}))
+```
+
+## `@transform`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+
+df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
+
+@transform(df, :a + 1)
+@transform(df, :a_plus_one = :a + 1)
+@transform(df, @bycol :a .- :b)
+@transform(df, :d = @bycol :a .+ 1)
+@transform(df, "a_minus_{2}" = :a - {[:b, :c]})
+@transform(df, "{1}_minus_{2}" = {[:a, :b, :c]} - {[:a, :b, :c]'})
+```
+
+## `@sort`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Random
+
+Random.seed!(123)
+
+df = DataFrame(randn(5, 5), :auto)
+
+@sort(df, :x1)
+@sort(df, -:x1)
+@sort(df, :x2 * :x3)
+
+df2 = DataFrame(a = [1, 2, 2, 1, 2], b = [4, 4, 4, 3, 3], c = [5, 7, 5, 7, 5])
+
+@sort(df2, :a, :b) 
+@sort(df2, :c - :a - :b)
+```
+
+## `@groupby`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Random
+
 Random.seed!(123)
 
 df = DataFrame(
-    id = shuffle(1:5),
-    group = rand('a':'b', 5),
-    weight_kg = randn(5) .* 5 .+ 60,
-    height_cm = randn(5) .* 10 .+ 170)
+    color = ["red", "red", "red", "blue", "blue"],
+    size = ["big", "small", "big", "small", "big"],
+    height = [1, 2, 3, 4, 5],
+)
 
-result = @chain df begin
-    @subset(:weight_kg > 50)
-    @transform(:BMI = :weight_kg / (:height_cm / 100) ^ 2)
-    @groupby(iseven(:id), :group)
-    @combine(:mean_BMI = mean(:BMI))
-    @sort(sqrt(:mean_BMI))
-end
-
-show(result)
+@groupby(df, :color)
+@groupby(df, :color, :size)
+@groupby(df, :evenheight = iseven(:height))
 ```
 
-## Design choices
+## `@astable`
 
-These are the most important aspects that differ from other packages ([DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl) in particular):
+```@repl
+using DataFrames
+using DataFrameMacros
 
-- All macros except `@combine` work **row-wise** by default. This reduces syntax complexity in most cases because no broadcasting is necessary. A modifier macro (`@bycol` or `@byrow`) can be used to switch between row/column-based mode when needed.
-- `@groupby` and `@sort` allow using arbitrary expressions including multiple columns, without having to `@transform` first and repeat the new column names.
-- Column expressions are interpolated into the macro with `$`.
-- Keyword arguments to the macro-underlying functions work by separating them from column expressions with the `;` character.
-- Target column names are written with `:` symbols to avoid visual ambiguity (`:newcol = ...`). This also allows to use `AsTable` as a target like in DataFrames.jl.
-- The modifier macro can also include the character `m` to switch on automatic `passmissing` in row-wise mode.
-- There is also a `@astable` modifier macro, which extracts every `:sym = expression` expression and collects the new symbols in a named tuple, while setting the target to `AsTable`.
+df = DataFrame(name = ["Jeff Bezanson", "Stefan Karpinski", "Alan Edelman", "Viral Shah"])
+@select(df, @astable :first, :last = split(:name))
+@select(df, @astable begin
+    f, l = split(:name)
+    :first, :last = f, l
+    :initials = first(f) * "." * first(l) * "."
+end)
+```
