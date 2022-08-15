@@ -17,8 +17,8 @@ The following macros are currently available:
 - Except `@combine`, all macros work row-wise by default in DataFrameMacros.jl
 - DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`.
 - You can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use `rtransform` or `transform`.
-- In DataFrameMacros.jl, you can apply the same expression to several columns at once and even broadcast across multiple sets of columns.
-- In DataFrameMacros.jl, you can use special multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregate across columns.
+- In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns.
+- In DataFrameMacros.jl, you can use special `{{ }}` multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregates across columns.
 
 # Examples
 
@@ -53,15 +53,35 @@ df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
 ```@repl
 using DataFrames
 using DataFrameMacros
+using Statistics
 
 df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
 
 @transform(df, :a + 1)
 @transform(df, :a_plus_one = :a + 1)
-@transform(df, @bycol :a .- :b)
+@transform(df, @bycol :a .- mean(:b))
 @transform(df, :d = @bycol :a .+ 1)
 @transform(df, "a_minus_{2}" = :a - {[:b, :c]})
 @transform(df, "{1}_minus_{2}" = {[:a, :b, :c]} - {[:a, :b, :c]'})
+```
+
+## `@combine`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
+
+@combine(df, :mean_a = mean(:a))
+@combine(df, "mean_{}" = mean({All()}))
+@combine(df, "first_3_{}" = first({Not(:b)}, 3))
+@combine(df, begin
+    :mean_a = mean(:a)
+    :median_b = median(:b)
+    :sum_c = sum(:c)
+end)
 ```
 
 ## `@sort`
@@ -118,4 +138,28 @@ df = DataFrame(name = ["Jeff Bezanson", "Stefan Karpinski", "Alan Edelman", "Vir
     :first, :last = f, l
     :initials = first(f) * "." * first(l) * "."
 end)
+```
+
+## `{{}}` syntax
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Random
+using Statistics
+
+Random.seed!(123)
+
+df = DataFrame(
+    jan = randn(5),
+    feb = randn(5),
+    mar = randn(5),
+    apr = randn(5),
+    may = randn(5),
+    jun = randn(5),
+    jul = randn(5),
+)
+
+@select(df, :july_larger = :jul > median({{Between(:jan, :jun)}}))
+@select(df, :mean_smaller = mean({{All()}}) < median({{All()}}))
 ```
