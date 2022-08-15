@@ -140,6 +140,23 @@ df = DataFrame(name = ["Jeff Bezanson", "Stefan Karpinski", "Alan Edelman", "Vir
 end)
 ```
 
+## Multiple columns in `{}`
+
+If `{}` contains a multi-column expression, then the function is run for each combination of arguments determined by broadcasting all sets together.
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(a = 1:5, b = 6:10, c = 11:15)
+
+@select(df, :a + {[:b, :c]})
+@select(df, :a + {Not(:a)})
+@select(df, {[:a, :b]} + {[:b, :c]})
+@select(df, {[:a, :b]} + {[:b, :c]'})
+```
+
 ## `{{}}` syntax
 
 The double brace syntax refers to multiple columns as a tuple, which means that you can aggregate over a larger number of columns than it would be practical to write out explicitly.
