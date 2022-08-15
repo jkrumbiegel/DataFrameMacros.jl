@@ -12,11 +12,11 @@ The following macros are currently available:
 - `@sort` / `@sort!`
 - `@unique`
 
-## Differences to ([DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
+## Differences to [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
 
 - Except `@combine`, all macros work row-wise by default in DataFrameMacros.jl
 - DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`.
-- You can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use `rtransform` or `transform`.
+- In DataFrameMacros.jl, you can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use, for example, `@rtransform` or `@transform` and all expressions in that call are then by-row or by-column.
 - In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns.
 - In DataFrameMacros.jl, you can use special `{{ }}` multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregates across columns.
 
