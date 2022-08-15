@@ -57,7 +57,7 @@ show(result)
 
 These are the most important aspects that differ from other packages ([DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl) in particular):
 
-- All macros except `@combine` work **row-wise** by default. This reduces syntax complexity in most cases because no broadcasting is necessary. A modifier macro (`@colwise` or `@rowwise`) can be used to switch between row/column-based mode when needed.
+- All macros except `@combine` work **row-wise** by default. This reduces syntax complexity in most cases because no broadcasting is necessary. A modifier macro (`@bycol` or `@byrow`) can be used to switch between row/column-based mode when needed.
 - `@groupby` and `@sort` allow using arbitrary expressions including multiple columns, without having to `@transform` first and repeat the new column names.
 - Column expressions are interpolated into the macro with `$`.
 - Keyword arguments to the macro-underlying functions work by separating them from column expressions with the `;` character.

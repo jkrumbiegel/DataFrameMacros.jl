@@ -51,7 +51,7 @@ using Test
     @test "a_myfunc" in names(df12)
     @test df12 == transform(df, :a => ByRow(myfunc))
 
-    df13 = @transform(df, :x = @colwise sum(:a) .+ :c)
+    df13 = @transform(df, :x = @bycol sum(:a) .+ :c)
     @test df13 == transform(df, [:a, :c] => ((x, y) -> sum(x) .+ y) => :x)
 
     df14 = DataFrame(a = ['a', 'b', missing])
@@ -71,7 +71,7 @@ end
     df3 = @combine(df, :x = sum(:a) + 3)
     @test df3 == combine(df, :a => (x -> sum(x) + 3) => :x)
 
-    df4 = @combine(df, :y = @rowwise 3 * :a)
+    df4 = @combine(df, :y = @byrow 3 * :a)
     @test df4 == combine(df, :a => ByRow(x -> 3 * x) => :y)
 end
 
@@ -280,7 +280,7 @@ end
 @testset "@transform! with @subset with grouped dataframes" begin
     df = DataFrame(id = [1, 1, 1, 2, 2, 2], val = [0, 1, 3, 1, 2, 3])
     gdf = groupby(df, :id)
-    df2 = @transform!(gdf, @subset(:val != 3), :newval = @colwise maximum(:val))
+    df2 = @transform!(gdf, @subset(:val != 3), :newval = @bycol maximum(:val))
 
     @test isequal(
         df,
@@ -301,7 +301,7 @@ end
     @test @select(df, {Between(1, 3)} + 1) == select(df, Between(1, 3) .=> ByRow(x -> x + 1))
     @test @select(df, {Not(2)} + 1) == select(df, Not(2) .=> ByRow(x -> x + 1))
 
-    @test @transform(df, ["c", "d"] = @colwise sum({Not(2)})) ==
+    @test @transform(df, ["c", "d"] = @bycol sum({Not(2)})) ==
         transform(df, Not(2) .=> sum .=> ["c", "d"])
 
     @test @select(df, {r"a"}) == select(df, names(df, r"a"))
@@ -333,6 +333,6 @@ end
     df = DataFrame(a = 1:3, b = 4:6, c = 7:9)
     @test @select(df, :d = maximum({{All()}})) == @select(df, :d = maximum([:a, :b, :c]))
     @test @select(df, :d = maximum({{Not(:a)}})) == @select(df, :d = maximum([:b, :c]))
-    @test @select(df, :d = @colwise sum({{r"[bc]"}})) == @select(df, :d = @colwise sum((:b, :c)))
+    @test @select(df, :d = @bycol sum({{r"[bc]"}})) == @select(df, :d = @bycol sum((:b, :c)))
     @test @select(df, :d = :a < maximum({{[:b, :c]}})) == @select(df, :d = :a < maximum((:b, :c)))
 end
