@@ -7,8 +7,6 @@ Read the docs at [https://jkrumbiegel.github.io/DataFrameMacros.jl/stable.](http
 DataFrameMacros.jl offers macros for DataFrame manipulation with a syntax geared towards clarity, brevity and convenience.
 Each macro translates expressions into the more verbose `source => function => sink` mini-language from [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl).
 
-## Example
-
 The following macros are currently available:
 - `@transform` / `@transform!`
 - `@select` / `@select!`
@@ -17,6 +15,19 @@ The following macros are currently available:
 - `@subset` / `@subset!`
 - `@sort` / `@sort!`
 - `@unique`
+
+## Differences to [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
+
+- Except `@combine`, all macros work row-wise by default in DataFrameMacros.jl
+- DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`.
+- In DataFrameMacros.jl, you can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use, for example, `@rtransform` or `@transform` and all expressions in that call are then by-row or by-column.
+- In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns.
+- In DataFrameMacros.jl, you can use special `{{ }}` multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregates across columns.
+- DataFrameMacros.jl has a special syntax to make use of `transform!` on a view returned from `subset`, so you can easily transform only some rows of your dataset with `@transform!(df, @subset(...), ...)`.
+
+If any of these points have changed, please open an issue.
+
+## Example
 
 Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
 

@@ -19,6 +19,9 @@ The following macros are currently available:
 - In DataFrameMacros.jl, you can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use, for example, `@rtransform` or `@transform` and all expressions in that call are then by-row or by-column.
 - In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns.
 - In DataFrameMacros.jl, you can use special `{{ }}` multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregates across columns.
+- DataFrameMacros.jl has a special syntax to make use of `transform!` on a view returned from `subset`, so you can easily transform only some rows of your dataset with `@transform!(df, @subset(...), ...)`.
+
+If any of these points have changed, please open an issue.
 
 # Examples
 
@@ -140,6 +143,16 @@ df = DataFrame(name = ["Jeff Bezanson", "Stefan Karpinski", "Alan Edelman", "Vir
 end)
 ```
 
+## `@passmissing`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+
+df = DataFrame(short = ["cat", "dog", "mouse", "duck"], long = ["catch", "dogged", missing, "docks"])
+@transform(df, :startswith = @passmissing startswith(:long, :short))
+```
+
 ## Multiple columns in `{}`
 
 If `{}` contains a multi-column expression, then the function is run for each combination of arguments determined by broadcasting all sets together.
@@ -181,4 +194,28 @@ df = DataFrame(
 
 @select(df, :july_larger = :jul > median({{Between(:jan, :jun)}}))
 @select(df, :mean_smaller = mean({{All()}}) < median({{All()}}))
+```
+
+## `@transform!` on `@subset`
+
+DataFrames.jl allows `transform!`ing a view returned by `subset(df, ..., view = true)`.
+If you pass a `@subset` macro call without a dataframe argument to `@transform!`, a view is created automatically, then the transform is executed and the original argument returned.
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(
+    name = ["Chicken", "Pork", "Apple", "Pear", "Beef"],
+    type = ["Meat", "Meat", "Fruit", "Fruit", "Meat"],
+    price = [4.99, 5.99, 0.99, 1.29, 6.99],
+)
+
+@transform!(df, @subset(:type == "Meat"), :price = :price + 2)
+@transform!(df, @subset(:price < 7, :name != "Pear"), :n_sold = round(Int, :price * 5))
+@transform!(
+    @groupby(df, :type),
+    @subset(@bycol :price .< mean(:price)),
+    :price = 100 * :price)
 ```
