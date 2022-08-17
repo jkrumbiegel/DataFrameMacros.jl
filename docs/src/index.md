@@ -219,3 +219,16 @@ df = DataFrame(
     @subset(@bycol :price .< mean(:price)),
     :price = 100 * :price)
 ```
+
+## Special case `@nrow`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(x = [1, 1, 1, 2, 2])
+
+@transform(df, @nrow)
+@combine(groupby(df, :x), :count = @nrow)
+```

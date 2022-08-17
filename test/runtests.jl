@@ -336,3 +336,13 @@ end
     @test @select(df, :d = @bycol sum({{r"[bc]"}})) == @select(df, :d = @bycol sum((:b, :c)))
     @test @select(df, :d = :a < maximum({{[:b, :c]}})) == @select(df, :d = :a < maximum((:b, :c)))
 end
+
+@testset "special cased functions" begin
+    df = DataFrame(a = [1, 1, 2, 2, 2])
+    result = @combine(@groupby(df, :a), :n = @nrow)
+    @test result == combine(groupby(df, :a), nrow => :n)
+    result = @combine(@groupby(df, :a), @nrow)
+    @test result == combine(groupby(df, :a), nrow)
+
+    @test_throws LoadError @eval @combine(@groupby(df, :a), :n = @nrow + 1)
+end
