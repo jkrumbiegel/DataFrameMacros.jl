@@ -19,11 +19,36 @@ The following macros are currently available:
 ## Differences to [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
 
 - Except `@combine`, all macros work row-wise by default in DataFrameMacros.jl
-- DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`.
+  ```julia
+  @transform(df, :y = :x + 1)
+  @combine(df, :sum = sum(:x))
+  ```
+- DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`
+  ```julia
+  @select(df, :y = {"x"} + 1)
+  col = :x
+  @transform(df, :z = {col} * 5)
+  ```
 - In DataFrameMacros.jl, you can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use, for example, `@rtransform` or `@transform` and all expressions in that call are then by-row or by-column.
-- In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns.
+  ```julia
+  @transform(
+      df,
+      :y = :x + 1,
+      :z = @bycol :x ./ mean(:x)
+  )
+  ```
+- In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns. You can also use a shortcut syntax to derive new column names from old ones.
+  ```julia
+  @transform(df, "{}_plus_one" = {r"^col"} + 1) # for all columns starting with "col"
+  ```
 - In DataFrameMacros.jl, you can use special `{{ }}` multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregates across columns.
-- DataFrameMacros.jl has a special syntax to make use of `transform!` on a view returned from `subset`, so you can easily transform only some rows of your dataset with `@transform!(df, @subset(...), ...)`.
+  ```julia
+  @select(df, :july_larger_than_rest = :july > maximum({{Not(:july)}}))
+  ```
+- DataFrameMacros.jl has a special syntax to make use of `transform!` on a view returned from `subset`.
+  ```julia
+  @transform!(df, @subset(:x > 5), :x = :y + 10) # update x in all rows where x > 5
+  ```
 
 If any of these points have changed, please open an issue.
 
