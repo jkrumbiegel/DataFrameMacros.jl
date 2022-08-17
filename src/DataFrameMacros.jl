@@ -231,7 +231,8 @@ end
 convert_source_funk_sink_expr(f, x, df) = x
 
 function convert_source_funk_sink_expr(f, e::Expr, df)
-    target, formula = split_formula(e)
+    target, formula = split_formula(e)        
+
     mod_macros, formula = extract_modification_macros(formula)
 
     if :astable in mod_macros
@@ -242,6 +243,15 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         formula = convert_automatic_astable_formula(formula)
     else
         target_expr = make_target_expression(df, target)
+    end
+
+    is_special, specialfunc = is_special_func_macro(formula)
+    if is_special
+        if target_expr === nothing
+            return :($specialfunc)
+        else
+            return :($specialfunc .=> $target_expr)
+        end
     end
 
     formula_is_column = is_column_expr(formula)
@@ -295,6 +305,14 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
                 $(esc(vcat)).($(stringified_columns...)) .=> h .=> $target_expr
             end
         end
+    end
+end
+
+function is_special_func_macro(expr)
+    if @capture expr @nrow
+        return true, DataFrames.nrow
+    else
+        return false, nothing
     end
 end
 
@@ -816,8 +834,5 @@ The `@astable` modifier also works with tuple destructuring syntax, so the previ
 ```
 
 """ DataFrameMacros
-
-const _titanic = include("titanic.jl")
-titanic() = deepcopy(_titanic)
 
 end
