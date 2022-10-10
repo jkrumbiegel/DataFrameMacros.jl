@@ -16,7 +16,6 @@ The following macros are currently available:
 
 - Except `@combine`, all macros work row-wise by default in DataFrameMacros.jl
 - DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`.
-- In DataFrameMacros.jl, you can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use, for example, `@rtransform` or `@transform` and all expressions in that call are then by-row or by-column.
 - In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns.
 - In DataFrameMacros.jl, you can use special `{{ }}` multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregates across columns.
 - DataFrameMacros.jl has a special syntax to make use of `transform!` on a view returned from `subset`, so you can easily transform only some rows of your dataset with `@transform!(df, @subset(...), ...)`.
@@ -231,4 +230,41 @@ df = DataFrame(x = [1, 1, 1, 2, 2])
 
 @transform(df, @nrow)
 @combine(groupby(df, :x), :count = @nrow)
+```
+
+## Special case `@eachindex`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(x = [1, 1, 1, 2, 2])
+
+@transform(df, @eachindex)
+@combine(groupby(df, :x), :i = @eachindex)
+```
+
+## Special case `@proprow`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(x = [1, 1, 1, 2, 2])
+
+@combine(groupby(df, :x), :p = @proprow)
+```
+
+## Special case `@groupindices`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(x = [1, 1, 1, 2, 2])
+
+@combine(groupby(df, :x), :gi = @groupindices)
 ```

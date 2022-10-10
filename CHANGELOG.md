@@ -1,3 +1,7 @@
+## v0.3.2
+
+- Added `@proprow`, `@eachindex` and `@groupindices` special function macros, which required compat to be raised to DataFrames v1.4.
+
 ## v0.3.0
 
 - **Breaking**: The `$()` interpolation syntax is replaced by `{}` for single columns (or broadcasted multi-columns)

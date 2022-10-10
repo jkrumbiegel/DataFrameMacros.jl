@@ -29,14 +29,6 @@ The following macros are currently available:
   col = :x
   @transform(df, :z = {col} * 5)
   ```
-- In DataFrameMacros.jl, you can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use, for example, `@rtransform` or `@transform` and all expressions in that call are then by-row or by-column.
-  ```julia
-  @transform(
-      df,
-      :y = :x + 1,
-      :z = @bycol :x ./ mean(:x)
-  )
-  ```
 - In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns. You can also use a shortcut syntax to derive new column names from old ones.
   ```julia
   @transform(df, "{}_plus_one" = {r"^col"} + 1) # for all columns starting with "col"
