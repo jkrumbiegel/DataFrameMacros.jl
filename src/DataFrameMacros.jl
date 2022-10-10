@@ -311,13 +311,12 @@ end
 function is_special_func_macro(expr)
     if @capture expr @nrow
         return true, DataFrames.nrow
-    # for DataFrames 1.4
-    # elseif @capture expr @eachindex
-    #     return true, DataFrames.eachindex
-    # elseif @capture expr @proprow
-    #     return true, DataFrames.proprow
-    # elseif @capture expr @groupindices
-    #     return true, DataFrames.groupindices
+    elseif @capture expr @eachindex
+        return true, DataFrames.eachindex
+    elseif @capture expr @proprow
+        return true, DataFrames.proprow
+    elseif @capture expr @groupindices
+        return true, DataFrames.groupindices
     else
         return false, nothing
     end

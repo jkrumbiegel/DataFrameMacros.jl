@@ -344,5 +344,23 @@ end
     result = @combine(@groupby(df, :a), @nrow)
     @test result == combine(groupby(df, :a), nrow)
 
+    result = @combine(@groupby(df, :a), :n = @proprow)
+    @test result == combine(groupby(df, :a), proprow => :n)
+    result = @combine(@groupby(df, :a), @proprow)
+    @test result == combine(groupby(df, :a), proprow)
+
+    result = @combine(@groupby(df, :a), :n = @eachindex)
+    @test result == combine(groupby(df, :a), eachindex => :n)
+    result = @combine(@groupby(df, :a), @eachindex)
+    @test result == combine(groupby(df, :a), eachindex)
+
+    result = @combine(@groupby(df, :a), :n = @groupindices)
+    @test result == combine(groupby(df, :a), groupindices => :n)
+    result = @combine(@groupby(df, :a), @groupindices)
+    @test result == combine(groupby(df, :a), groupindices)
+
     @test_throws LoadError @eval @combine(@groupby(df, :a), :n = @nrow + 1)
+    @test_throws LoadError @eval @combine(@groupby(df, :a), :n = @proprow + 1)
+    @test_throws LoadError @eval @combine(@groupby(df, :a), :n = @eachindex + 1)
+    @test_throws LoadError @eval @combine(@groupby(df, :a), :n = @groupindices + 1)
 end
