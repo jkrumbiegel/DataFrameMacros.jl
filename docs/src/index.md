@@ -232,3 +232,40 @@ df = DataFrame(x = [1, 1, 1, 2, 2])
 @transform(df, @nrow)
 @combine(groupby(df, :x), :count = @nrow)
 ```
+
+## Special case `@eachindex`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(x = [1, 1, 1, 2, 2])
+
+@transform(df, @eachindex)
+@combine(groupby(df, :x), :i = @eachindex)
+```
+
+## Special case `@proprow`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(x = [1, 1, 1, 2, 2])
+
+@combine(groupby(df, :x), :p = @proprow)
+```
+
+## Special case `@groupindices`
+
+```@repl
+using DataFrames
+using DataFrameMacros
+using Statistics
+
+df = DataFrame(x = [1, 1, 1, 2, 2])
+
+@combine(groupby(df, :x), :gi = @groupindices)
+```
