@@ -46,7 +46,7 @@ If any of these points have changed, please open an issue.
 
 ## Example
 
-Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convient syntax for chains of transformations:
+Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convenient syntax for chains of transformations:
 
 ```julia
 using DataFrameMacros
