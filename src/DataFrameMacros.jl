@@ -745,15 +745,12 @@ end)
 
 You can modify the behavior of all macros using modifier macros, which are not real macros but only signal changed behavior for a positional argument to the outer macro.
 
-Each modifier is specified with a single character, and you can combine these characters as well.
-The supported flags are:
-
-| character | meaning |
+| macro | meaning |
 |:--|:--|
-| r | Switch to **by-row** processing. |
-| c | Switch to **by-column** processing. |
-| m | Wrap the function expression in `passmissing`. |
-| t | Collect all `:symbol = expression` expressions into a `NamedTuple` where `(; symbol = expression, ...)` and set the sink to `AsTable`. |
+| `@byrow` | Switch to **by-row** processing. |
+| `@bycol` | Switch to **by-column** processing. |
+| `@passmissing` | Wrap the function expression in `passmissing`. |
+| `@astable` | Collect all `:symbol = expression` expressions into a `NamedTuple` where `(; symbol = expression, ...)` and set the sink to `AsTable`. |
 
 ### Example `@bycol`
 
