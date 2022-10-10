@@ -1,3 +1,7 @@
+## v0.3.3
+
+- Fixed bug when column symbols were used inside braces.
+
 ## v0.3.2
 
 - Added `@proprow`, `@eachindex` and `@groupindices` special function macros, which required compat to be raised to DataFrames v1.4.
