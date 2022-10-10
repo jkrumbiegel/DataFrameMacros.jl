@@ -2,7 +2,7 @@ module DataFrameMacros
 
 using Base: ident_cmp
 using DataFrames: DataFrames, transform, transform!, select, select!, combine, subset, subset!, ByRow, passmissing, groupby, AsTable, DataFrame, GroupedDataFrame
-using MacroTools: @capture
+using MacroTools: @capture, prewalk, postwalk
 
 export @transform, @transform!, @select, @select!, @combine, @subset, @subset!, @groupby, @sort, @sort!, @unique
 
@@ -535,7 +535,7 @@ function make_function_expr(formula, columns)
     end
 
     newsyms = map(x -> gensym(), columns)
-    replaced_formula = postwalk(formula) do e
+    replaced_formula = prewalk(formula) do e
         # check first if this is an escaped symbol
         # and if yes return it unwrapped
         if is_escaped_symbol(e)
@@ -592,12 +592,6 @@ function is_simple_function_call(expr::Expr, columns)
 
     is_simple, expr.args[1]
 end
-
-# from macrotools
-walk(x, inner, outer) = outer(x)
-walk(x::Expr, inner, outer) = outer(Expr(x.head, map(inner, x.args)...))
-postwalk(f, x) = walk(x, x -> postwalk(f, x), f)
-
 
 convert_automatic_astable_formula(x) = x
 function convert_automatic_astable_formula(e::Expr)

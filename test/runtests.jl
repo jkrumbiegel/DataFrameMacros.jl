@@ -335,6 +335,7 @@ end
     @test @select(df, :d = maximum({{Not(:a)}})) == @select(df, :d = maximum([:b, :c]))
     @test @select(df, :d = @bycol sum({{r"[bc]"}})) == @select(df, :d = @bycol sum((:b, :c)))
     @test @select(df, :d = :a < maximum({{[:b, :c]}})) == @select(df, :d = :a < maximum((:b, :c)))
+    @test @select(df, :d = :a < maximum({{Not(:a)}})) == @select(df, :d = :a < maximum((:b, :c)))
 end
 
 @testset "special cased functions" begin
