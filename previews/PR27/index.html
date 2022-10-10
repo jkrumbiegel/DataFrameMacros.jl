@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>DataFrameMacros.jl · DataFrameMacros.jl</title><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>DataFrameMacros.jl</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>DataFrameMacros.jl</a><ul class="internal"><li><a class="tocitem" href="#Differences-to-[DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)"><span>Differences to DataFramesMeta.jl</span></a></li><li class="toplevel"><a class="tocitem" href="#Examples"><span>Examples</span></a></li><li><a class="tocitem" href="#@select"><span><code>@select</code></span></a></li><li><a class="tocitem" href="#@transform"><span><code>@transform</code></span></a></li><li><a class="tocitem" href="#@combine"><span><code>@combine</code></span></a></li><li><a class="tocitem" href="#@sort"><span><code>@sort</code></span></a></li><li><a class="tocitem" href="#@groupby"><span><code>@groupby</code></span></a></li><li><a class="tocitem" href="#@astable"><span><code>@astable</code></span></a></li><li><a class="tocitem" href="#@passmissing"><span><code>@passmissing</code></span></a></li><li><a class="tocitem" href="#Multiple-columns-in-{}"><span>Multiple columns in <code>{}</code></span></a></li><li><a class="tocitem" href="#{{}}-syntax"><span><code>{{}}</code> syntax</span></a></li><li><a class="tocitem" href="#@transform!-on-@subset"><span><code>@transform!</code> on <code>@subset</code></span></a></li><li><a class="tocitem" href="#Special-case-@nrow"><span>Special case <code>@nrow</code></span></a></li></ul></li><li><a class="tocitem" href="documentation/">Documentation</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>DataFrameMacros.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>DataFrameMacros.jl</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/jkrumbiegel/DataFrameMacros.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="DataFrameMacros.jl"><a class="docs-heading-anchor" href="#DataFrameMacros.jl">DataFrameMacros.jl</a><a id="DataFrameMacros.jl-1"></a><a class="docs-heading-anchor-permalink" href="#DataFrameMacros.jl" title="Permalink"></a></h1><p>DataFrameMacros.jl offers macros for manipulating DataFrames with a syntax geared towards clarity, brevity and convenience. Each macro translates expressions into the <code>source .=&gt; function .=&gt; sink</code> mini-language from <a href="https://github.com/JuliaData/DataFrames.jl">DataFrames.jl</a>.</p><p>The following macros are currently available:</p><ul><li><code>@transform</code> / <code>@transform!</code></li><li><code>@select</code> / <code>@select!</code></li><li><code>@groupby</code></li><li><code>@combine</code></li><li><code>@subset</code> / <code>@subset!</code></li><li><code>@sort</code> / <code>@sort!</code></li><li><code>@unique</code></li></ul><h2 id="Differences-to-[DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)"><a class="docs-heading-anchor" href="#Differences-to-[DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)">Differences to <a href="https://github.com/JuliaData/DataFramesMeta.jl">DataFramesMeta.jl</a></a><a id="Differences-to-[DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)-1"></a><a class="docs-heading-anchor-permalink" href="#Differences-to-[DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)" title="Permalink"></a></h2><ul><li>Except <code>@combine</code>, all macros work row-wise by default in DataFrameMacros.jl</li><li>DataFrameMacros.jl uses <code>{}</code> to signal column expressions instead of <code>$()</code>.</li><li>In DataFrameMacros.jl, you can switch between by-row and by-column operation separately for each expression in one macro call. In DataFramesMeta.jl, you instead either use, for example, <code>@rtransform</code> or <code>@transform</code> and all expressions in that call are then by-row or by-column.</li><li>In DataFrameMacros.jl, you can apply the same expression to several columns in <code>{}</code> braces at once and even broadcast across multiple sets of columns.</li><li>In DataFrameMacros.jl, you can use special <code>{{ }}</code> multi-column expressions where you can operate on a tuple of all values at once which makes it easier to do aggregates across columns.</li><li>DataFrameMacros.jl has a special syntax to make use of <code>transform!</code> on a view returned from <code>subset</code>, so you can easily transform only some rows of your dataset with <code>@transform!(df, @subset(...), ...)</code>.</li></ul><p>If any of these points have changed, please open an issue.</p><h1 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h1><h2 id="@select"><a class="docs-heading-anchor" href="#@select"><code>@select</code></a><a id="@select-1"></a><a class="docs-heading-anchor-permalink" href="#@select" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(a = 1:5, b = 6:10, c = 11:15)</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :a)</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ a
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     2
+   3 │     3
+   4 │     4
+   5 │     5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :a, :b)</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a      b
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      6
+   2 │     2      7
+   3 │     3      8
+   4 │     4      9
+   5 │     5     10</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :A = :a, :B = :b)</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ A      B
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      6
+   2 │     2      7
+   3 │     3      8
+   4 │     4      9
+   5 │     5     10</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :a + 1)</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ a_function
+     │ Int64
+─────┼────────────
+   1 │          2
+   2 │          3
+   3 │          4
+   4 │          5
+   5 │          6</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :a_plus_one = :a + 1)</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ a_plus_one
+     │ Int64
+─────┼────────────
+   1 │          2
+   2 │          3
+   3 │          4
+   4 │          5
+   5 │          6</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, {[:a, :b]} / 2)</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_function  b_function
+     │ Float64     Float64
+─────┼────────────────────────
+   1 │        0.5         3.0
+   2 │        1.0         3.5
+   3 │        1.5         4.0
+   4 │        2.0         4.5
+   5 │        2.5         5.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, sqrt({Not(:b)}))</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_sqrt   c_sqrt
+     │ Float64  Float64
+─────┼──────────────────
+   1 │ 1.0      3.31662
+   2 │ 1.41421  3.4641
+   3 │ 1.73205  3.60555
+   4 │ 2.0      3.74166
+   5 │ 2.23607  3.87298</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, 5 * {All()})</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a_function  b_function  c_function
+     │ Int64       Int64       Int64
+─────┼────────────────────────────────────
+   1 │          5          30          55
+   2 │         10          35          60
+   3 │         15          40          65
+   4 │         20          45          70
+   5 │         25          50          75</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, {Between(1, 2)} - {Between(2, 3)})</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_b_-  b_c_-
+     │ Int64  Int64
+─────┼──────────────
+   1 │    -5     -5
+   2 │    -5     -5
+   3 │    -5     -5
+   4 │    -5     -5
+   5 │    -5     -5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, &quot;{1}_plus_{2}&quot; = {Between(1, 2)} + {Between(2, 3)})</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_plus_b  b_plus_c
+     │ Int64     Int64
+─────┼────────────────────
+   1 │        7        17
+   2 │        9        19
+   3 │       11        21
+   4 │       13        23
+   5 │       15        25</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, @bycol :a .- :b)</code><code class="nohighlight hljs ansi" style="display:block;">ERROR: UndefVarError: .- not defined</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :d = @bycol :a .+ 1)</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ d
+     │ Int64
+─────┼───────
+   1 │     2
+   2 │     3
+   3 │     4
+   4 │     5
+   5 │     6</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, &quot;a_minus_{2}&quot; = :a - {[:b, :c]})</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_minus_b  a_minus_c
+     │ Int64      Int64
+─────┼──────────────────────
+   1 │        -5        -10
+   2 │        -5        -10
+   3 │        -5        -10
+   4 │        -5        -10
+   5 │        -5        -10</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, &quot;{1}_minus_{2}&quot; = {[:a, :b, :c]} - {[:a, :b, :c]&#39;})</code><code class="nohighlight hljs ansi" style="display:block;">5×9 DataFrame
+ Row │ a_minus_a  b_minus_a  c_minus_a  a_minus_b  b_minus_b  c_minus_b  a_min ⋯
+     │ Int64      Int64      Int64      Int64      Int64      Int64      Int64 ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │         0          5         10         -5          0          5        ⋯
+   2 │         0          5         10         -5          0          5
+   3 │         0          5         10         -5          0          5
+   4 │         0          5         10         -5          0          5
+   5 │         0          5         10         -5          0          5        ⋯
+                                                               3 columns omitted</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :a + mean({{[:b, :c]}}))</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ a_b_c_function
+     │ Float64
+─────┼────────────────
+   1 │            9.5
+   2 │           11.5
+   3 │           13.5
+   4 │           15.5
+   5 │           17.5</code></pre><h2 id="@transform"><a class="docs-heading-anchor" href="#@transform"><code>@transform</code></a><a id="@transform-1"></a><a class="docs-heading-anchor-permalink" href="#@transform" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(a = 1:5, b = 6:10, c = 11:15)</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, :a + 1)</code><code class="nohighlight hljs ansi" style="display:block;">5×4 DataFrame
+ Row │ a      b      c      a_function
+     │ Int64  Int64  Int64  Int64
+─────┼─────────────────────────────────
+   1 │     1      6     11           2
+   2 │     2      7     12           3
+   3 │     3      8     13           4
+   4 │     4      9     14           5
+   5 │     5     10     15           6</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, :a_plus_one = :a + 1)</code><code class="nohighlight hljs ansi" style="display:block;">5×4 DataFrame
+ Row │ a      b      c      a_plus_one
+     │ Int64  Int64  Int64  Int64
+─────┼─────────────────────────────────
+   1 │     1      6     11           2
+   2 │     2      7     12           3
+   3 │     3      8     13           4
+   4 │     4      9     14           5
+   5 │     5     10     15           6</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, @bycol :a .- mean(:b))</code><code class="nohighlight hljs ansi" style="display:block;">5×4 DataFrame
+ Row │ a      b      c      a_b_function
+     │ Int64  Int64  Int64  Float64
+─────┼───────────────────────────────────
+   1 │     1      6     11          -7.0
+   2 │     2      7     12          -6.0
+   3 │     3      8     13          -5.0
+   4 │     4      9     14          -4.0
+   5 │     5     10     15          -3.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, :d = @bycol :a .+ 1)</code><code class="nohighlight hljs ansi" style="display:block;">5×4 DataFrame
+ Row │ a      b      c      d
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     1      6     11      2
+   2 │     2      7     12      3
+   3 │     3      8     13      4
+   4 │     4      9     14      5
+   5 │     5     10     15      6</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, &quot;a_minus_{2}&quot; = :a - {[:b, :c]})</code><code class="nohighlight hljs ansi" style="display:block;">5×5 DataFrame
+ Row │ a      b      c      a_minus_b  a_minus_c
+     │ Int64  Int64  Int64  Int64      Int64
+─────┼───────────────────────────────────────────
+   1 │     1      6     11         -5        -10
+   2 │     2      7     12         -5        -10
+   3 │     3      8     13         -5        -10
+   4 │     4      9     14         -5        -10
+   5 │     5     10     15         -5        -10</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, &quot;{1}_minus_{2}&quot; = {[:a, :b, :c]} - {[:a, :b, :c]&#39;})</code><code class="nohighlight hljs ansi" style="display:block;">5×12 DataFrame
+ Row │ a      b      c      a_minus_a  b_minus_a  c_minus_a  a_minus_b  b_minu ⋯
+     │ Int64  Int64  Int64  Int64      Int64      Int64      Int64      Int64  ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │     1      6     11          0          5         10         -5         ⋯
+   2 │     2      7     12          0          5         10         -5
+   3 │     3      8     13          0          5         10         -5
+   4 │     4      9     14          0          5         10         -5
+   5 │     5     10     15          0          5         10         -5         ⋯
+                                                               5 columns omitted</code></pre><h2 id="@combine"><a class="docs-heading-anchor" href="#@combine"><code>@combine</code></a><a id="@combine-1"></a><a class="docs-heading-anchor-permalink" href="#@combine" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(a = 1:5, b = 6:10, c = 11:15)</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @combine(df, :mean_a = mean(:a))</code><code class="nohighlight hljs ansi" style="display:block;">1×1 DataFrame
+ Row │ mean_a
+     │ Float64
+─────┼─────────
+   1 │     3.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @combine(df, &quot;mean_{}&quot; = mean({All()}))</code><code class="nohighlight hljs ansi" style="display:block;">1×3 DataFrame
+ Row │ mean_a   mean_b   mean_c
+     │ Float64  Float64  Float64
+─────┼───────────────────────────
+   1 │     3.0      8.0     13.0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @combine(df, &quot;first_3_{}&quot; = first({Not(:b)}, 3))</code><code class="nohighlight hljs ansi" style="display:block;">3×2 DataFrame
+ Row │ first_3_a  first_3_c
+     │ Int64      Int64
+─────┼──────────────────────
+   1 │         1         11
+   2 │         2         12
+   3 │         3         13</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @combine(df, begin
+           :mean_a = mean(:a)
+           :median_b = median(:b)
+           :sum_c = sum(:c)
+       end)</code><code class="nohighlight hljs ansi" style="display:block;">1×3 DataFrame
+ Row │ mean_a   median_b  sum_c
+     │ Float64  Float64   Int64
+─────┼──────────────────────────
+   1 │     3.0       8.0     65</code></pre><h2 id="@sort"><a class="docs-heading-anchor" href="#@sort"><code>@sort</code></a><a id="@sort-1"></a><a class="docs-heading-anchor-permalink" href="#@sort" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Random</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; Random.seed!(123)</code><code class="nohighlight hljs ansi" style="display:block;">MersenneTwister(123)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(randn(5, 5), :auto)</code><code class="nohighlight hljs ansi" style="display:block;">5×5 DataFrame
+ Row │ x1         x2          x3         x4         x5
+     │ Float64    Float64     Float64    Float64    Float64
+─────┼────────────────────────────────────────────────────────
+   1 │  1.19027   -0.664713   -0.339366   0.368002  -0.979539
+   2 │  2.04818    0.980968   -0.843878  -0.281133   0.260402
+   3 │  1.14265   -0.0754831  -0.888936  -0.734886  -0.468489
+   4 │  0.459416   0.273815    0.327215  -0.71741   -0.880897
+   5 │ -0.396679  -0.194229    0.592403  -0.77507    0.277726</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @sort(df, :x1)</code><code class="nohighlight hljs ansi" style="display:block;">5×5 DataFrame
+ Row │ x1         x2          x3         x4         x5
+     │ Float64    Float64     Float64    Float64    Float64
+─────┼────────────────────────────────────────────────────────
+   1 │ -0.396679  -0.194229    0.592403  -0.77507    0.277726
+   2 │  0.459416   0.273815    0.327215  -0.71741   -0.880897
+   3 │  1.14265   -0.0754831  -0.888936  -0.734886  -0.468489
+   4 │  1.19027   -0.664713   -0.339366   0.368002  -0.979539
+   5 │  2.04818    0.980968   -0.843878  -0.281133   0.260402</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @sort(df, -:x1)</code><code class="nohighlight hljs ansi" style="display:block;">5×5 DataFrame
+ Row │ x1         x2          x3         x4         x5
+     │ Float64    Float64     Float64    Float64    Float64
+─────┼────────────────────────────────────────────────────────
+   1 │  2.04818    0.980968   -0.843878  -0.281133   0.260402
+   2 │  1.19027   -0.664713   -0.339366   0.368002  -0.979539
+   3 │  1.14265   -0.0754831  -0.888936  -0.734886  -0.468489
+   4 │  0.459416   0.273815    0.327215  -0.71741   -0.880897
+   5 │ -0.396679  -0.194229    0.592403  -0.77507    0.277726</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @sort(df, :x2 * :x3)</code><code class="nohighlight hljs ansi" style="display:block;">5×5 DataFrame
+ Row │ x1         x2          x3         x4         x5
+     │ Float64    Float64     Float64    Float64    Float64
+─────┼────────────────────────────────────────────────────────
+   1 │  2.04818    0.980968   -0.843878  -0.281133   0.260402
+   2 │ -0.396679  -0.194229    0.592403  -0.77507    0.277726
+   3 │  1.14265   -0.0754831  -0.888936  -0.734886  -0.468489
+   4 │  0.459416   0.273815    0.327215  -0.71741   -0.880897
+   5 │  1.19027   -0.664713   -0.339366   0.368002  -0.979539</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df2 = DataFrame(a = [1, 2, 2, 1, 2], b = [4, 4, 4, 3, 3], c = [5, 7, 5, 7, 5])</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      4      5
+   2 │     2      4      7
+   3 │     2      4      5
+   4 │     1      3      7
+   5 │     2      3      5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @sort(df2, :a, :b)</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      3      7
+   2 │     1      4      5
+   3 │     2      3      5
+   4 │     2      4      7
+   5 │     2      4      5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @sort(df2, :c - :a - :b)</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     2      4      5
+   2 │     1      4      5
+   3 │     2      3      5
+   4 │     2      4      7
+   5 │     1      3      7</code></pre><h2 id="@groupby"><a class="docs-heading-anchor" href="#@groupby"><code>@groupby</code></a><a id="@groupby-1"></a><a class="docs-heading-anchor-permalink" href="#@groupby" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Random</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; Random.seed!(123)</code><code class="nohighlight hljs ansi" style="display:block;">MersenneTwister(123)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(
+           color = [&quot;red&quot;, &quot;red&quot;, &quot;red&quot;, &quot;blue&quot;, &quot;blue&quot;],
+           size = [&quot;big&quot;, &quot;small&quot;, &quot;big&quot;, &quot;small&quot;, &quot;big&quot;],
+           height = [1, 2, 3, 4, 5],
+       )</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ color   size    height
+     │ String  String  Int64
+─────┼────────────────────────
+   1 │ red     big          1
+   2 │ red     small        2
+   3 │ red     big          3
+   4 │ blue    small        4
+   5 │ blue    big          5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @groupby(df, :color)</code><code class="nohighlight hljs ansi" style="display:block;">GroupedDataFrame with 2 groups based on key: color
+First Group (3 rows): color = &quot;red&quot;
+ Row │ color   size    height
+     │ String  String  Int64
+─────┼────────────────────────
+   1 │ red     big          1
+   2 │ red     small        2
+   3 │ red     big          3
+⋮
+Last Group (2 rows): color = &quot;blue&quot;
+ Row │ color   size    height
+     │ String  String  Int64
+─────┼────────────────────────
+   1 │ blue    small        4
+   2 │ blue    big          5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @groupby(df, :color, :size)</code><code class="nohighlight hljs ansi" style="display:block;">GroupedDataFrame with 4 groups based on keys: color, size
+First Group (2 rows): color = &quot;red&quot;, size = &quot;big&quot;
+ Row │ color   size    height
+     │ String  String  Int64
+─────┼────────────────────────
+   1 │ red     big          1
+   2 │ red     big          3
+⋮
+Last Group (1 row): color = &quot;blue&quot;, size = &quot;big&quot;
+ Row │ color   size    height
+     │ String  String  Int64
+─────┼────────────────────────
+   1 │ blue    big          5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @groupby(df, :evenheight = iseven(:height))</code><code class="nohighlight hljs ansi" style="display:block;">GroupedDataFrame with 2 groups based on key: evenheight
+First Group (3 rows): evenheight = false
+ Row │ color   size    height  evenheight
+     │ String  String  Int64   Bool
+─────┼────────────────────────────────────
+   1 │ red     big          1       false
+   2 │ red     big          3       false
+   3 │ blue    big          5       false
+⋮
+Last Group (2 rows): evenheight = true
+ Row │ color   size    height  evenheight
+     │ String  String  Int64   Bool
+─────┼────────────────────────────────────
+   1 │ red     small        2        true
+   2 │ blue    small        4        true</code></pre><h2 id="@astable"><a class="docs-heading-anchor" href="#@astable"><code>@astable</code></a><a id="@astable-1"></a><a class="docs-heading-anchor-permalink" href="#@astable" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(name = [&quot;Jeff Bezanson&quot;, &quot;Stefan Karpinski&quot;, &quot;Alan Edelman&quot;, &quot;Viral Shah&quot;])</code><code class="nohighlight hljs ansi" style="display:block;">4×1 DataFrame
+ Row │ name
+     │ String
+─────┼──────────────────
+   1 │ Jeff Bezanson
+   2 │ Stefan Karpinski
+   3 │ Alan Edelman
+   4 │ Viral Shah</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, @astable :first, :last = split(:name))</code><code class="nohighlight hljs ansi" style="display:block;">4×2 DataFrame
+ Row │ first      last
+     │ SubStrin…  SubStrin…
+─────┼──────────────────────
+   1 │ Jeff       Bezanson
+   2 │ Stefan     Karpinski
+   3 │ Alan       Edelman
+   4 │ Viral      Shah</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, @astable begin
+           f, l = split(:name)
+           :first, :last = f, l
+           :initials = first(f) * &quot;.&quot; * first(l) * &quot;.&quot;
+       end)</code><code class="nohighlight hljs ansi" style="display:block;">4×3 DataFrame
+ Row │ first      last       initials
+     │ SubStrin…  SubStrin…  String
+─────┼────────────────────────────────
+   1 │ Jeff       Bezanson   J.B.
+   2 │ Stefan     Karpinski  S.K.
+   3 │ Alan       Edelman    A.E.
+   4 │ Viral      Shah       V.S.</code></pre><h2 id="@passmissing"><a class="docs-heading-anchor" href="#@passmissing"><code>@passmissing</code></a><a id="@passmissing-1"></a><a class="docs-heading-anchor-permalink" href="#@passmissing" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(short = [&quot;cat&quot;, &quot;dog&quot;, &quot;mouse&quot;, &quot;duck&quot;], long = [&quot;catch&quot;, &quot;dogged&quot;, missing, &quot;docks&quot;])</code><code class="nohighlight hljs ansi" style="display:block;">4×2 DataFrame
+ Row │ short   long
+     │ String  String?
+─────┼─────────────────
+   1 │ cat     catch
+   2 │ dog     dogged
+   3 │ mouse   missing
+   4 │ duck    docks</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, :startswith = @passmissing startswith(:long, :short))</code><code class="nohighlight hljs ansi" style="display:block;">4×3 DataFrame
+ Row │ short   long     startswith
+     │ String  String?  Bool?
+─────┼─────────────────────────────
+   1 │ cat     catch          true
+   2 │ dog     dogged         true
+   3 │ mouse   missing     missing
+   4 │ duck    docks         false</code></pre><h2 id="Multiple-columns-in-{}"><a class="docs-heading-anchor" href="#Multiple-columns-in-{}">Multiple columns in <code>{}</code></a><a id="Multiple-columns-in-{}-1"></a><a class="docs-heading-anchor-permalink" href="#Multiple-columns-in-{}" title="Permalink"></a></h2><p>If <code>{}</code> contains a multi-column expression, then the function is run for each combination of arguments determined by broadcasting all sets together.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(a = 1:5, b = 6:10, c = 11:15)</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ a      b      c
+     │ Int64  Int64  Int64
+─────┼─────────────────────
+   1 │     1      6     11
+   2 │     2      7     12
+   3 │     3      8     13
+   4 │     4      9     14
+   5 │     5     10     15</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :a + {[:b, :c]})</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_b_+  a_c_+
+     │ Int64  Int64
+─────┼──────────────
+   1 │     7     12
+   2 │     9     14
+   3 │    11     16
+   4 │    13     18
+   5 │    15     20</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :a + {Not(:a)})</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_b_+  a_c_+
+     │ Int64  Int64
+─────┼──────────────
+   1 │     7     12
+   2 │     9     14
+   3 │    11     16
+   4 │    13     18
+   5 │    15     20</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, {[:a, :b]} + {[:b, :c]})</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ a_b_+  b_c_+
+     │ Int64  Int64
+─────┼──────────────
+   1 │     7     17
+   2 │     9     19
+   3 │    11     21
+   4 │    13     23
+   5 │    15     25</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, {[:a, :b]} + {[:b, :c]&#39;})</code><code class="nohighlight hljs ansi" style="display:block;">5×4 DataFrame
+ Row │ a_b_+  b_b_+  a_c_+  b_c_+
+     │ Int64  Int64  Int64  Int64
+─────┼────────────────────────────
+   1 │     7     12     12     17
+   2 │     9     14     14     19
+   3 │    11     16     16     21
+   4 │    13     18     18     23
+   5 │    15     20     20     25</code></pre><h2 id="{{}}-syntax"><a class="docs-heading-anchor" href="#{{}}-syntax"><code>{{}}</code> syntax</a><a id="{{}}-syntax-1"></a><a class="docs-heading-anchor-permalink" href="#{{}}-syntax" title="Permalink"></a></h2><p>The double brace syntax refers to multiple columns as a tuple, which means that you can aggregate over a larger number of columns than it would be practical to write out explicitly.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Random</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; Random.seed!(123)</code><code class="nohighlight hljs ansi" style="display:block;">MersenneTwister(123)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(
+           jan = randn(5),
+           feb = randn(5),
+           mar = randn(5),
+           apr = randn(5),
+           may = randn(5),
+           jun = randn(5),
+           jul = randn(5),
+       )</code><code class="nohighlight hljs ansi" style="display:block;">5×7 DataFrame
+ Row │ jan        feb         mar        apr        may        jun        jul  ⋯
+     │ Float64    Float64     Float64    Float64    Float64    Float64    Floa ⋯
+─────┼──────────────────────────────────────────────────────────────────────────
+   1 │  1.19027   -0.664713   -0.339366   0.368002  -0.979539   1.52392   -0.8 ⋯
+   2 │  2.04818    0.980968   -0.843878  -0.281133   0.260402  -1.77773    0.3
+   3 │  1.14265   -0.0754831  -0.888936  -0.734886  -0.468489  -2.93306   -0.1
+   4 │  0.459416   0.273815    0.327215  -0.71741   -0.880897   0.782258   2.3
+   5 │ -0.396679  -0.194229    0.592403  -0.77507    0.277726   2.31358   -0.9 ⋯
+                                                                1 column omitted</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :july_larger = :jul &gt; median({{Between(:jan, :jun)}}))</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ july_larger
+     │ Bool
+─────┼─────────────
+   1 │       false
+   2 │        true
+   3 │        true
+   4 │        true
+   5 │       false</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @select(df, :mean_smaller = mean({{All()}}) &lt; median({{All()}}))</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ mean_smaller
+     │ Bool
+─────┼──────────────
+   1 │        false
+   2 │         true
+   3 │         true
+   4 │        false
+   5 │        false</code></pre><h2 id="@transform!-on-@subset"><a class="docs-heading-anchor" href="#@transform!-on-@subset"><code>@transform!</code> on <code>@subset</code></a><a id="@transform!-on-@subset-1"></a><a class="docs-heading-anchor-permalink" href="#@transform!-on-@subset" title="Permalink"></a></h2><p>DataFrames.jl allows <code>transform!</code>ing a view returned by <code>subset(df, ..., view = true)</code>. If you pass a <code>@subset</code> macro call without a dataframe argument to <code>@transform!</code>, a view is created automatically, then the transform is executed and the original argument returned.</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(
+           name = [&quot;Chicken&quot;, &quot;Pork&quot;, &quot;Apple&quot;, &quot;Pear&quot;, &quot;Beef&quot;],
+           type = [&quot;Meat&quot;, &quot;Meat&quot;, &quot;Fruit&quot;, &quot;Fruit&quot;, &quot;Meat&quot;],
+           price = [4.99, 5.99, 0.99, 1.29, 6.99],
+       )</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ name     type    price
+     │ String   String  Float64
+─────┼──────────────────────────
+   1 │ Chicken  Meat       4.99
+   2 │ Pork     Meat       5.99
+   3 │ Apple    Fruit      0.99
+   4 │ Pear     Fruit      1.29
+   5 │ Beef     Meat       6.99</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform!(df, @subset(:type == &quot;Meat&quot;), :price = :price + 2)</code><code class="nohighlight hljs ansi" style="display:block;">5×3 DataFrame
+ Row │ name     type    price
+     │ String   String  Float64
+─────┼──────────────────────────
+   1 │ Chicken  Meat       6.99
+   2 │ Pork     Meat       7.99
+   3 │ Apple    Fruit      0.99
+   4 │ Pear     Fruit      1.29
+   5 │ Beef     Meat       8.99</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform!(df, @subset(:price &lt; 7, :name != &quot;Pear&quot;), :n_sold = round(Int, :price * 5))</code><code class="nohighlight hljs ansi" style="display:block;">5×4 DataFrame
+ Row │ name     type    price    n_sold
+     │ String   String  Float64  Int64?
+─────┼───────────────────────────────────
+   1 │ Chicken  Meat       6.99       35
+   2 │ Pork     Meat       7.99  missing
+   3 │ Apple    Fruit      0.99        5
+   4 │ Pear     Fruit      1.29  missing
+   5 │ Beef     Meat       8.99  missing</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform!(
+           @groupby(df, :type),
+           @subset(@bycol :price .&lt; mean(:price)),
+           :price = 100 * :price)</code><code class="nohighlight hljs ansi" style="display:block;">5×4 DataFrame
+ Row │ name     type    price    n_sold
+     │ String   String  Float64  Int64?
+─────┼───────────────────────────────────
+   1 │ Chicken  Meat     699.0        35
+   2 │ Pork     Meat       7.99  missing
+   3 │ Apple    Fruit     99.0         5
+   4 │ Pear     Fruit      1.29  missing
+   5 │ Beef     Meat       8.99  missing</code></pre><h2 id="Special-case-@nrow"><a class="docs-heading-anchor" href="#Special-case-@nrow">Special case <code>@nrow</code></a><a id="Special-case-@nrow-1"></a><a class="docs-heading-anchor-permalink" href="#Special-case-@nrow" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrames</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using DataFrameMacros</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; using Statistics</code><code class="nohighlight hljs ansi" style="display:block;"></code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; df = DataFrame(x = [1, 1, 1, 2, 2])</code><code class="nohighlight hljs ansi" style="display:block;">5×1 DataFrame
+ Row │ x
+     │ Int64
+─────┼───────
+   1 │     1
+   2 │     1
+   3 │     1
+   4 │     2
+   5 │     2</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @transform(df, @nrow)</code><code class="nohighlight hljs ansi" style="display:block;">5×2 DataFrame
+ Row │ x      nrow
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      5
+   2 │     1      5
+   3 │     1      5
+   4 │     2      5
+   5 │     2      5</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; @combine(groupby(df, :x), :count = @nrow)</code><code class="nohighlight hljs ansi" style="display:block;">2×2 DataFrame
+ Row │ x      count
+     │ Int64  Int64
+─────┼──────────────
+   1 │     1      3
+   2 │     2      2</code></pre></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="documentation/">Documentation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Monday 10 October 2022 07:49">Monday 10 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
