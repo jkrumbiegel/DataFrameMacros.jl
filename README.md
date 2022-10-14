@@ -20,6 +20,8 @@ You can just write it as a normal expression which is transformed to the mini-la
 ```
 
 DataFrameMacros.jl also helps you when you have to transform many columns in a similar way.
+Every expression in DataFrameMacros.jl is automatically executed once for every column in a multi-column specifier, such as `All`, `Between`, `Not` or regular expressions like `r"cat|dog"`.
+
 Here's how you could divide all columns of a DataFrame that start with `"a"` by 10 and add the suffix `_div_10` to each new name:
 
 ```julia
