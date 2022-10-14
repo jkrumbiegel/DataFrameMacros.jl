@@ -3,6 +3,8 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://jkrumbiegel.github.io/DataFrameMacros.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-lightgray.svg)](https://jkrumbiegel.github.io/DataFrameMacros.jl/dev)
 
+[![CI Testing](https://github.com/jkrumbiegel/DataFrameMacros.jl/workflows/CI/badge.svg)](https://github.com/jkrumbiegel/DataFrameMacros.jl/actions?query=workflow%3ACI+branch%3Amaster)
+
 ## Intro
 
 DataFrames.jl has a special mini-language for data transformations, which is powerful but often verbose.
