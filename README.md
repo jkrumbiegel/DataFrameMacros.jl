@@ -3,6 +3,8 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://jkrumbiegel.github.io/DataFrameMacros.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-lightgray.svg)](https://jkrumbiegel.github.io/DataFrameMacros.jl/dev)
 
+## Intro
+
 DataFrames.jl has a special mini-language for data transformations, which is powerful but often verbose.
 Here's an example:
 
@@ -22,6 +24,12 @@ Here's how you could divide all columns of a DataFrame that start with `"a"` by 
 
 ```julia
 @select(df, "{}_div_10" = {r"^a"} / 10)
+```
+
+You can also use multiple columns together as a Tuple with the double brace syntax, which is useful when you need to run an aggregation over those columns in an expression. In this example we keep all rows where the value in the `:January` column is larger than the median from `:February` to `:December`:
+
+```julia
+@subset(df, :January > median({{ Between(:February, :December) }})
 ```
 
 ## API
