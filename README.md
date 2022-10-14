@@ -3,34 +3,49 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://jkrumbiegel.github.io/DataFrameMacros.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-lightgray.svg)](https://jkrumbiegel.github.io/DataFrameMacros.jl/dev)
 
-## Summary
+DataFrames.jl has a special mini-language for data transformations, which is powerful but often verbose.
+Here's an example:
 
-DataFrameMacros.jl offers macros for DataFrame manipulation with a syntax geared towards clarity, brevity and convenience.
-Each macro translates expressions into the more verbose `source => function => sink` mini-language from [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl).
+```julia
+transform(df, :A => ByRow(x -> x + 1) => :B)
+```
 
-The following macros are currently available:
-- `@transform` / `@transform!`
-- `@select` / `@select!`
+With DataFrameMacros.jl, you don't have to separately specify the input columns, the transformation function, and the output columns.
+You can just write it as a normal expression which is transformed to the mini-language for you:
+
+```julia
+@transform(df, :B = :A + 1)
+```
+
+DataFrameMacros.jl also helps you when you have to transform many columns in a similar way.
+Here's how you could divide all columns of a DataFrame that start with `"a"` by 10 and add the suffix `_div_10` to each new name:
+
+```julia
+@select(df, "{}_div_10" = {r"^a"} / 10)
+```
+
+## API
+
+DataFrameMacros.jl exports these macros:
+- `@transform` and `@transform!`
+- `@select` and `@select!`
 - `@groupby`
 - `@combine`
-- `@subset` / `@subset!`
-- `@sort` / `@sort!`
+- `@subset` and `@subset!`
+- `@sort` and `@sort!`
 - `@unique`
 
-## Differences to [DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl)
+## DataFrameMacros.jl compared to DataFramesMeta.jl
+
+[DataFramesMeta.jl](https://github.com/JuliaData/DataFramesMeta.jl) is another package that provides macros for DataFrames.jl.
+The syntax looks similar in many cases, but here are some noteworthy differences:
 
 - Except `@combine`, all macros work row-wise by default in DataFrameMacros.jl
   ```julia
   @transform(df, :y = :x + 1)
   @combine(df, :sum = sum(:x))
   ```
-- DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`
-  ```julia
-  @select(df, :y = {"x"} + 1)
-  col = :x
-  @transform(df, :z = {col} * 5)
-  ```
-- In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns. You can also use a shortcut syntax to derive new column names from old ones.
+ - In DataFrameMacros.jl, you can apply the same expression to several columns in `{}` braces at once and even broadcast across multiple sets of columns. You can also use a shortcut syntax to derive new column names from old ones.
   ```julia
   @transform(df, "{}_plus_one" = {r"^col"} + 1) # for all columns starting with "col"
   ```
@@ -38,47 +53,38 @@ The following macros are currently available:
   ```julia
   @select(df, :july_larger_than_rest = :july > maximum({{Not(:july)}}))
   ```
+- DataFrameMacros.jl uses `{}` to signal column expressions instead of `$()`
+  ```julia
+  @select(df, :y = {"x"} + 1)
+  col = :x
+  @transform(df, :z = {col} * 5)
+  ```
 - DataFrameMacros.jl has a special syntax to make use of `transform!` on a view returned from `subset`.
   ```julia
   @transform!(df, @subset(:x > 5), :x = :y + 10) # update x in all rows where x > 5
   ```
+- DataFrameMacros.jl has a `@groupby` macro, which is a shortcut to execute `transform` and then `groupby` on a DataFrame.jl. This is nice when you want to group on a column that you have to create first. Instead of
+  ```julia
+  df2 = @transform(df, :Y = :X + 1)
+  groupby(df2, :Y)
+  ```
+  You can write:
+  ```julia
+  @groupby(df, :Y = :X + 1)
+  ```
 
 If any of these points have changed, please open an issue.
 
-## Example
+## Tip
 
-Together with [Chain.jl](https://github.com/jkrumbiegel/Chain.jl), you get a convenient syntax for chains of transformations:
+You can use the separate package [Chain.jl](https://github.com/jkrumbiegel/Chain.jl) for writing chains of transformations, this way you don't have to repeat the DataFrame argument every time. This is similar to the tidyverse piping syntax that you might know from R:
 
 ```julia
-using DataFrameMacros
-using DataFrames
-using Chain
-using Random
-using Statistics
-Random.seed!(123)
-
-df = DataFrame(
-    id = shuffle(1:5),
-    group = rand('a':'b', 5),
-    weight_kg = randn(5) .* 5 .+ 60,
-    height_cm = randn(5) .* 10 .+ 170)
-
 @chain df begin
-    @subset(:weight_kg > 50)
-    @transform(:BMI = :weight_kg / (:height_cm / 100) ^ 2)
-    @groupby(iseven(:id), :group)
-    @combine(:mean_BMI = mean(:BMI))
-    @sort(sqrt(:mean_BMI))
+    @subset(:A > 50)
+    @transform(:B = :A + :C)
+    @groupby(iseven(:B), :D)
+    @combine(:mean_E = mean(:E))
+    @sort(abs(:F))
 end
-```
-
-```
-4×3 DataFrame
- Row │ id_iseven  group  mean_BMI
-     │ Bool       Char   Float64
-─────┼────────────────────────────
-   1 │     false  a       19.0728
-   2 │      true  a       20.4405
-   3 │     false  b       22.097
-   4 │      true  b       22.9701
 ```
