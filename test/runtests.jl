@@ -295,7 +295,7 @@ end
 
 @testset "multiple columns" begin
     df = DataFrame(a = 1:3, aa = 4:6, b = 7:9)
-    df2 = @select(df, {All()} = Float32({All()}))
+    df2 = @select(df, {} = Float32({All()}))
     @test df2 == select(df, names(df, All()) .=> ByRow(Float32) .=> names(df, All()))
 
     @test @select(df, {Between(1, 3)} + 1) == select(df, Between(1, 3) .=> ByRow(x -> x + 1))

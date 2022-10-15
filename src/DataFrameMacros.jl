@@ -240,9 +240,10 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
             error("There should be no target expression when the @astable macro is used. The implicit target is `AsTable`. Target received was $target")
         end
         target_expr = AsTable
+        is_ref_target_expr = false
         formula = convert_automatic_astable_formula(formula)
     else
-        target_expr = make_target_expression(df, target)
+        is_ref_target_expr, target_expr = make_target_expression(df, target)
     end
 
     is_special, specialfunc = is_special_func_macro(formula)
@@ -265,6 +266,11 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
         multicols[i] ?
             esc(:(Ref($(stringarg_expr(c, df))))) :
             esc(stringarg_expr(c, df)) for (i, c) in enumerate(clean_columns)
+    ]
+
+    stringified_single_columns = [
+        esc(stringarg_expr(c, df)) for (i, c) in enumerate(clean_columns)
+        if !multicols[i]
     ]
 
     byrow = (defaultbyrow(f) && !(:bycol in mod_macros)) ||
@@ -299,10 +305,20 @@ function convert_source_funk_sink_expr(f, e::Expr, df)
 
             h = $(byrow ? :(ByRow(g)) : :(g))
 
-            if $(target_expr === nothing)
+            @static if $(target_expr === nothing)
                 $(esc(vcat)).($(stringified_columns...)) .=> h
             else
-                $(esc(vcat)).($(stringified_columns...)) .=> h .=> $target_expr
+                @static if $is_ref_target_expr
+                    # in this case, the target expression is a function making column names out of
+                    # the input columns
+                    name_creator_func = $target_expr
+                    # do not use multicolumn expressions {{ }} for the ref bracket syntax
+                    # because it's impractical
+                    t = name_creator_func.($(esc(vcat)).($(stringified_single_columns...)))
+                else
+                    t = $target_expr
+                end
+                $(esc(vcat)).($(stringified_columns...)) .=> h .=> t
             end
         end
     end
@@ -326,9 +342,7 @@ function makefunc(f, arglength_tuple)
     # if no vals return f so function name determination works
     all(x -> x === nothing, arglength_tuple) && return f
     function (args...)
-        # @show args
         collated_args = collate_tuple(arglength_tuple, args)
-        # @show collated_args
         f(collated_args...)
     end
 end
@@ -357,46 +371,46 @@ end
     end
 end
 
-make_target_expression(df, ::Nothing) = nothing
+make_target_expression(df, ::Nothing) = false, nothing
+
+function transform_bracket_expr(x)
+    had_brackets = false
+    sym = gensym()
+    new_expr = prewalk(x) do subexpr
+        if @capture subexpr {}
+            had_brackets = true
+            return :($sym[1])
+            push!(ref_brackets, subexpr)
+        elseif @capture subexpr {y_}
+            had_brackets = true
+            return :($sym[$y])
+        end
+        return subexpr
+    end
+    func_expr = esc(:($sym -> $new_expr))
+    had_brackets, func_expr
+end
+
 
 function make_target_expression(df, expr)
 
     if expr isa Expr && expr.head == :string && any(is_target_shortcut_string, expr.args)
-        return shortcut_string_expr_to_target_expr(expr)
+        return true, shortcut_string_expr_to_target_expr(expr)
     end
 
-    # not really columns but resolved names
-    columns = gather_columns(expr)
-    clean_columns = map(c -> clean_column(c, df), columns)
-
-    replaced_expr = postwalk(expr) do e
-        # check first if this is an escaped symbol
-        # and if yes return it unwrapped
-        if is_escaped_symbol(e)
-            return e.args[1]
-        end
-
-        # Check if this expression matches one of the column expressions
-        # and wrap it with DataFrameMacros.stringargs(df, ex) if it matches.
-        # This will later resolve to a vector of strings, which DataFrames
-        # can handle.
-        i = findfirst(c -> c == e, columns)
-        if i === nothing
-            e
-        else
-            c = clean_columns[i]
-            stringarg_expr(c, df)
-        end
+    had_brackets, bracket_expr = transform_bracket_expr(expr)
+    if had_brackets
+        return true, bracket_expr
     end
 
-    esc(replaced_expr)
+    return false, esc(expr)
 end
 
 function make_target_expression(df, s::String)
     if !(is_target_shortcut_string(s))
-        s
+        false, s
     else
-        shortcut_string_expr_to_target_expr(s)
+        true, shortcut_string_expr_to_target_expr(s)
     end
 end
 
@@ -491,8 +505,6 @@ function gather_columns!(columns, x; unique)
         end
     end
 end
-
-flagchars = "crmt"
 
 extract_modification_macros(x) = "", x
 
@@ -712,10 +724,32 @@ For most complex function expressions, DataFrames concatenates all names of the 
 It's common that you want to use a different naming scheme, but you can't write `@select(df, :x = {All()} + 1)` because then every new column would be named `x` and that is disallowed.
 There are several options to deal with the problem of multiple new columns:
 
-- You can use a Vector of strings such as `["x", "y", "z"] = sqrt({All()})`, the length has to match the number of columns in the multi-column specifier. This is the most direct way to specify multiple names, but it doesn't leverage the names of the used columns dynamically.
-- You can reference existing column names and modify them somehow, like `"sqrt_of_" .* {All()}) = sqrt({All()})`. Note that column specifiers on the left-hand side of the `=` operator like `{All()}` are resolved to a Vector of column names, not to the content of the columns like on the right-hand side. This requires you to repeat selectors, though.
-- You can use a function that takes in a vector of column names (even if there's just one) and outputs a new column name, like `(cols -> uppercase(cols[1])) = sqrt({All()})`.
+- You can use a Vector of strings or symbols such as `["x", "y", "z"] = sqrt({All()})`. The length has to match the number of columns in the multi-column specifier(s). This is the most direct way to specify multiple names, but it doesn't leverage the names of the used columns dynamically.
 - You can use DataFrameMacro's string shortcut syntax. If there's a string literal with one or more {} brackets, it's treated as an anonymous function that takes in column names and splices them into the string. `{}` is equivalent to `{1}`, but you can access further names with `{2}` and so on, if there is more than one column used in the function. In the example above, you could rename all columns with `@select(df, "sqrt_of_{}" = sqrt({All()}))`.
+- You can use `{1}`, `{2}`, etc. in any expression to refer to the first, second, etc. column name.
+  Like with the shortcut string syntax, `{}` is the same as `{1}`.
+
+  For example:
+
+```julia
+julia> df = DataFrame(a_1 = 1:3, b_1 = 4:6)
+3×2 DataFrame
+ Row │ a_1    b_1   
+     │ Int64  Int64 
+─────┼──────────────
+   1 │     1      4
+   2 │     2      5
+   3 │     3      6
+
+julia> @transform(df, "result_" * split({}, "_")[1] = sqrt({All()}))
+3×4 DataFrame
+ Row │ a_1    b_1    result_a  result_b 
+     │ Int64  Int64  Float64   Float64  
+─────┼──────────────────────────────────
+   1 │     1      4   1.0       2.0
+   2 │     2      5   1.41421   2.23607
+   3 │     3      6   1.73205   2.44949
+```
 
 ## Passing multiple expressions
 
