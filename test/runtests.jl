@@ -323,6 +323,11 @@ end
     # test that {{ }} is not included for brackets on left side
     df2 = @select(df, {} * "_smaller" = maximum({{All()}}) < {[:a, :b, :c]})
     @test names(df2) == ["a_smaller", "b_smaller", "c_smaller"]
+
+    # same test but with escaping check of a local variable
+    snippet = "_smaller"
+    df3 = @select(df, {} * snippet = maximum({{All()}}) < {[:a, :b, :c]})
+    @test df2 == df3
 end
 
 @testset "target name shortcut string" begin
