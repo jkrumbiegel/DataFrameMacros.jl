@@ -30,6 +30,13 @@ Here's how you could divide all columns of a DataFrame that start with `"a"` by 
 @select(df, "{}_div_10" = {r"^a"} / 10)
 ```
 
+To execute more complex name transformations on the left-hand side, you can use `{n}` expressions.
+For example, to concatenate each first column name with only the last split off part of each second column name in a multi-column transformation, you could write:
+
+```julia
+@select(df, {1} * split({2})[end] = {first_set_of_cols} + {second_set_of_cols})
+```
+
 You can also use multiple columns together as a Tuple with the double brace syntax, which is useful when you need to run an aggregation over those columns in an expression. In this example we keep all rows where the value in the `:January` column is larger than the median from `:February` to `:December`:
 
 ```julia
