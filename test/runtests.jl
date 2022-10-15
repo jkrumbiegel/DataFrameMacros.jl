@@ -315,6 +315,16 @@ end
     @test df5 == select(df, vcat.("a", names(df, 1:3)) .=> +)
 end
 
+@testset "lefthand brackets" begin
+    df = DataFrame(a = 1:3, b = 4:6, c = 7:9)
+    @test @select(df, {} * "_plus_" * {2} = :a + {[:b, :c]}) ==
+        select(df, vcat.(:a, [:b, :c]) .=> (+) .=> ["a_plus_b", "a_plus_c"])
+
+    # test that {{ }} is not included for brackets on left side
+    df2 = @select(df, {} * "_smaller" = maximum({{All()}}) < {[:a, :b, :c]})
+    @test names(df2) == ["a_smaller", "b_smaller", "c_smaller"]
+end
+
 @testset "target name shortcut string" begin
     df = DataFrame(a = 1:3, b = 4:6)
 
