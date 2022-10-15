@@ -295,7 +295,7 @@ end
 
 @testset "multiple columns" begin
     df = DataFrame(a = 1:3, aa = 4:6, b = 7:9)
-    df2 = @select(df, {All()} = Float32({All()}))
+    df2 = @select(df, {} = Float32({All()}))
     @test df2 == select(df, names(df, All()) .=> ByRow(Float32) .=> names(df, All()))
 
     @test @select(df, {Between(1, 3)} + 1) == select(df, Between(1, 3) .=> ByRow(x -> x + 1))
@@ -313,6 +313,21 @@ end
 
     df5 = @select(df, :a + {1:3})
     @test df5 == select(df, vcat.("a", names(df, 1:3)) .=> +)
+end
+
+@testset "lefthand brackets" begin
+    df = DataFrame(a = 1:3, b = 4:6, c = 7:9)
+    @test @select(df, {} * "_plus_" * {2} = :a + {[:b, :c]}) ==
+        select(df, vcat.(:a, [:b, :c]) .=> (+) .=> ["a_plus_b", "a_plus_c"])
+
+    # test that {{ }} is not included for brackets on left side
+    df2 = @select(df, {} * "_smaller" = maximum({{All()}}) < {[:a, :b, :c]})
+    @test names(df2) == ["a_smaller", "b_smaller", "c_smaller"]
+
+    # same test but with escaping check of a local variable
+    snippet = "_smaller"
+    df3 = @select(df, {} * snippet = maximum({{All()}}) < {[:a, :b, :c]})
+    @test df2 == df3
 end
 
 @testset "target name shortcut string" begin
