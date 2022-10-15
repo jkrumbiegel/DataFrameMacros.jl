@@ -1,6 +1,6 @@
 ## v0.4
 
-- **Breaking**: A remnant of pre-0.3 versions, using arbitrary column specifiers on the left-hand side, was removed. Instead, the behavior of using `{}` and `{n}` expressions on the left hand side was assimilated to the existing shortcut string syntax. `{}` or `{1}` refers to the name of the first column used, `{2}` to the second, etc. This allows to use transformation expressions on the used column names, such as `uppercase({})` or `split({2})[1]`.
+- **Technically breaking**: A basically unknown functionality of pre-0.3 versions, using arbitrary column specifiers on the left-hand side, was removed. Instead, the behavior of using `{}` and `{n}` expressions on the left hand side was assimilated to the existing shortcut string syntax. `{}` or `{1}` refers to the name of the first column used, `{2}` to the second, etc. This allows to use transformation expressions on the used column names, such as `uppercase({})` or `split({2})[1]`.
 
 ## v0.3.3
 
