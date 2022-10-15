@@ -33,7 +33,7 @@ Here's how you could divide all columns of a DataFrame that start with `"a"` by 
 You can also use multiple columns together as a Tuple with the double brace syntax, which is useful when you need to run an aggregation over those columns in an expression. In this example we keep all rows where the value in the `:January` column is larger than the median from `:February` to `:December`:
 
 ```julia
-@subset(df, :January > median({{ Between(:February, :December) }})
+@subset(df, :January > median({{ Between(:February, :December) }}))
 ```
 
 ## API
